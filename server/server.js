@@ -8,6 +8,7 @@ const plantRoutes = require('./routes/plantRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userPlantRoutes = require('./routes/userPlantRoutes');
 const wantedPlantRoutes = require('./routes/wantedPlantRoutes');
+const careLogRoutes = require('./routes/careLogRoutes');
 
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/plants', plantRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/userplants', userPlantRoutes);
 app.use('/api/wanted', wantedPlantRoutes);
+app.use('/api/carelog', careLogRoutes);
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

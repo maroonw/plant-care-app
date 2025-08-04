@@ -1,4 +1,5 @@
 const UserPlant = require('../models/UserPlant');
+const CareLog = require('../models/CareLog');
 
 // @route   POST /api/userplants
 // @desc    Add a plant to the user's owned list
@@ -47,7 +48,7 @@ exports.getUserPlants = async (req, res) => {
 // @desc    Log watering or fertilizing for a user plant
 // @access  Private
 exports.logPlantCare = async (req, res) => {
-  const { type } = req.body; // "water" or "fertilize"
+  const { type, note } = req.body; // "water" or "fertilize"
 
   try {
     const userPlant = await UserPlant.findOne({
@@ -72,6 +73,14 @@ exports.logPlantCare = async (req, res) => {
     }
 
     await userPlant.save();
+
+    await CareLog.create({
+      user: req.user._id,
+      userPlant: userPlant._id,
+      type,
+      note: note || ''
+    });
+
     res.status(200).json(userPlant);
   } catch (err) {
     res.status(500).json({ message: err.message });
