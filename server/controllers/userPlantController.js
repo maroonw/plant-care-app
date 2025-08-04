@@ -1,5 +1,6 @@
 const UserPlant = require('../models/UserPlant');
 const CareLog = require('../models/CareLog');
+const { cloudinary } = require('../utils/cloudinary');
 
 // @route   POST /api/userplants
 // @desc    Add a plant to the user's owned list
@@ -83,6 +84,36 @@ exports.logPlantCare = async (req, res) => {
 
     res.status(200).json(userPlant);
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @route   POST /api/userplants/:id/upload
+// @desc    Upload plant image
+// @access  Private
+exports.uploadUserPlantImage = async (req, res) => {
+  try {
+    console.log('req.file:', req.file);  // <--- log here to confirm multer works
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const userPlant = await UserPlant.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!userPlant) {
+      return res.status(404).json({ message: 'UserPlant not found' });
+    }
+
+    userPlant.imageUrl = req.file.path; // ✅ this is the Cloudinary URL
+    await userPlant.save();
+
+    res.status(200).json({ imageUrl: userPlant.imageUrl });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
