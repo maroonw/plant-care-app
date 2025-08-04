@@ -5,7 +5,17 @@ const userPlantSchema = new mongoose.Schema({
   plant: { type: mongoose.Schema.Types.ObjectId, ref: 'Plant', required: true },
   nickname: { type: String }, // optional name like “Fred the Fiddle”
   notes: { type: String, default: '' },
-  images: [{ type: String }], // URLs of uploaded images
+  images: [
+    {
+    url: String,
+    public_id: String,
+    }
+  ],
+  primaryImage: {
+    url: String,
+    public_id: String,
+  },
+
   careSchedule: {
     wateringFrequencyDays: { type: Number, default: 7 }, // how often to water
     fertilizingFrequencyDays: { type: Number, default: 30 } // how often to fertilize

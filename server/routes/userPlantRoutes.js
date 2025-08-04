@@ -1,7 +1,7 @@
 const multer = require('multer');
 const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
-const { uploadUserPlantImage } = require('../controllers/userPlantController');
+const { uploadUserPlantImages } = require('../controllers/userPlantController');
 
 const express = require('express');
 const router = express.Router();
@@ -21,6 +21,10 @@ router.get('/', protect, getUserPlants);
 router.patch('/:id/care', protect, logPlantCare);
 
 // POST /api/:id/upload
-router.post('/:id/upload', protect, upload.single('image'), uploadUserPlantImage);
+router.post(
+    '/:id/upload',
+    protect,
+    upload.array('images', 5),
+    uploadUserPlantImages);
 
 module.exports = router;
