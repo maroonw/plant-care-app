@@ -7,6 +7,7 @@ const cors = require('cors');
 const plantRoutes = require('./routes/plantRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userPlantRoutes = require('./routes/userPlantRoutes');
+const wantedPlantRoutes = require('./routes/wantedPlantRoutes');
 
 
 const app = express();
@@ -18,6 +19,7 @@ app.use('/uploads', express.static('uploads')); // for serving uploaded images
 app.use('/api/plants', plantRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/userplants', userPlantRoutes);
+app.use('/api/wanted', wantedPlantRoutes);
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
