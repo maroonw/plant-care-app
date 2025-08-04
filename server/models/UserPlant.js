@@ -6,6 +6,14 @@ const userPlantSchema = new mongoose.Schema({
   nickname: { type: String }, // optional name like “Fred the Fiddle”
   notes: { type: String, default: '' },
   images: [{ type: String }], // URLs of uploaded images
+  careSchedule: {
+    wateringFrequencyDays: { type: Number, default: 7 }, // how often to water
+    fertilizingFrequencyDays: { type: Number, default: 30 } // how often to fertilize
+  },
+  lastWatered: { type: Date, default: null },
+  lastFertilized: { type: Date, default: null },
+  nextWateringDue: { type: Date, default: null },
+  nextFertilizingDue: { type: Date, default: null },
   addedAt: { type: Date, default: Date.now }
 });
 
