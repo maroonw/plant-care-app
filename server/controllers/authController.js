@@ -4,21 +4,25 @@ const User = require('../models/User');
 
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { id: user._id,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
   );
 };
 
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password, role, firstName, lastName } = req.body;
   try {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'Email already in use' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword, role });
+    const user = new User({ username, email, password: hashedPassword, role, firstName, lastName });
     await user.save();
 
     res.status(201).json({

@@ -5,6 +5,7 @@ const { getAllPlants,
     uploadPlantImages,
     deletePlant,
     uploadCommunityImages,
+    getCommunityImages,
     updatePlant } = require('../controllers/plantController');
 
 const { protect, adminOnly } = require('../middleware/authMiddleware');
@@ -26,5 +27,8 @@ router.delete('/:id', protect, adminOnly, deletePlant);
 
 // POST /api/plants/:id/community
 router.post('/:id/community', protect, upload.array('images', 5), uploadCommunityImages);
+
+// GET /api/plants/:id/community
+router.get('/:id/community', getCommunityImages);
 
 module.exports = router;

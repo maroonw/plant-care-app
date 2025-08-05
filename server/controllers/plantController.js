@@ -112,10 +112,15 @@ exports.uploadCommunityImages = async (req, res) => {
       return res.status(400).json({ message: 'No images uploaded' });
     }
 
+  let displayName = "Anonymous";
+    if (req.user?.firstName && req.user?.lastName) {
+      displayName = `${req.user.firstName} ${req.user.lastName.charAt(0)}.`;
+    }
+
     const newImages = req.files.map(file => ({
       url: file.path,
       public_id: file.filename,
-      submittedBy: `${req.user.firstName} ${req.user.lastName[0]}.`
+      submittedBy: displayName
     }));
 
     plant.communityImages.push(...newImages);
@@ -133,3 +138,22 @@ exports.uploadCommunityImages = async (req, res) => {
     res.status(500).json({ message: 'Server error during upload' });
   }
 };
+
+// @desc    Get community images for a specific plant
+// @route   GET /api/plants/:id/community
+exports.getCommunityImages = async (req, res) => {
+  try {
+    const plant = await Plant.findById(req.params.id);
+    if (!plant) {
+      return res.status(404).json({ message: 'Plant not found' });
+    }
+
+    res.status(200).json({
+      communityImages: plant.communityImages
+    });
+  } catch (err) {
+    console.error('Error getting community images:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
