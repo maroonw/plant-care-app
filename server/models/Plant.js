@@ -1,28 +1,35 @@
 const mongoose = require('mongoose');
 
+const imageSchema = new mongoose.Schema({
+  url: String,
+  public_id: String,
+  submittedBy: String
+});
+
 const plantSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
-  tier: { type: String, enum: ['easy', 'standard', 'hard'], required: true },
-  wateringSchedule: {
+  name: { type: String, required: true },
+  scientificName: { type: String },
+  tier: {
     type: String,
-    enum: ['weekly', 'biweekly', 'monthly', 'as needed'],
-    required: true
+    enum: ['easy', 'standard', 'hard'],
+    required: true,
   },
-  lightRequirement: {
+  wateringFrequencyDays: Number,
+  fertilizingFrequencyDays: Number,
+  light: {
     type: String,
-    enum: ['low', 'medium', 'bright indirect', 'direct'],
-    required: true
+    enum: ['low', 'medium', 'bright', 'direct'],
   },
-  soilType: {
+  soil: {
     type: String,
-    enum: ['well-draining', 'cactus', 'peat-based', 'moist'],
-    required: true
+    enum: ['well-draining', 'moist', 'dry', 'specialty'],
   },
-  animalFriendly: { type: Boolean, default: false },
-  notes: { type: String, default: '' },
-  images: [{ type: String }],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-}, { timestamps: true });
+  petFriendly: Boolean,
+  toxicToPets: Boolean,
+  images: [imageSchema],           // Curated image gallery
+  primaryImage: imageSchema,       // One designated image
+  communityImages: [imageSchema],  // Optional community-submitted gallery
+});
 
 module.exports = mongoose.model('Plant', plantSchema);
 
