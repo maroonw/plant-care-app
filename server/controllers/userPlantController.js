@@ -135,3 +135,80 @@ exports.uploadUserPlantImages = async (req, res) => {
   }
 };
 
+exports.deleteUserPlantImage = async (req, res) => {
+  try {
+    const { plantId, imageId } = req.params;
+    const userId = req.user.id;
+
+    // ✅ First, fetch the UserPlant document from MongoDB
+    const userPlant = await UserPlant.findOne({ _id: plantId, user: userId });
+
+    if (!userPlant) {
+      return res.status(404).json({ message: 'UserPlant not found or unauthorized' });
+    }
+
+    // ✅ Find the index of the image to delete
+    const imageIndex = userPlant.images.findIndex(
+      img => img._id.toString() === imageId
+    );
+
+    if (imageIndex === -1) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    const imageToDelete = userPlant.images[imageIndex];
+
+    // ✅ Delete from Cloudinary if it has a public_id
+    if (imageToDelete.public_id) {
+      await cloudinary.uploader.destroy(imageToDelete.public_id);
+    }
+
+    // ✅ Remove from images array
+    userPlant.images.splice(imageIndex, 1);
+
+    // ✅ If it's the primary image, unset it
+    if (
+      userPlant.primaryImage &&
+      userPlant.primaryImage._id?.toString() === imageId
+    ) {
+      userPlant.primaryImage = {};
+    }
+
+    await userPlant.save();
+
+    res.json({ message: 'Image deleted successfully' });
+  } catch (err) {
+    console.error('Image deletion error:', err);
+    res.status(500).json({ message: 'Server error during image deletion' });
+  }
+};
+
+exports.setPrimaryUserPlantImage = async (req, res) => {
+  try {
+    const { plantId, imageId } = req.params;
+    const userId = req.user.id;
+
+    const userPlant = await UserPlant.findOne({ _id: plantId, user: userId });
+
+    if (!userPlant) {
+      return res.status(404).json({ message: 'UserPlant not found or unauthorized' });
+    }
+
+    const selectedImage = userPlant.images.find(img => img._id.toString() === imageId);
+
+    if (!selectedImage) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    userPlant.primaryImage = selectedImage;
+    await userPlant.save();
+
+    res.status(200).json({
+      message: 'Primary image updated successfully',
+      primaryImage: userPlant.primaryImage.toObject ? userPlant.primaryImage.toObject() : userPlant.primaryImage
+    });
+  } catch (err) {
+    console.error('Set primary image error:', err);
+    res.status(500).json({ message: 'Server error during primary image update' });
+  }
+};

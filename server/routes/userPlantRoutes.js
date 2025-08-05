@@ -1,7 +1,7 @@
 const multer = require('multer');
 const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
-const { uploadUserPlantImages } = require('../controllers/userPlantController');
+const { uploadUserPlantImages, deleteUserPlantImage, setPrimaryUserPlantImage } = require('../controllers/userPlantController');
 
 const express = require('express');
 const router = express.Router();
@@ -27,4 +27,17 @@ router.post(
     upload.array('images', 5),
     uploadUserPlantImages);
 
+// DELETE an image from a user plant
+router.delete(
+  '/:plantId/images/:imageId',
+  protect,
+  deleteUserPlantImage
+);
 module.exports = router;
+
+// PATCH /api/userplants/:plantId/images/:imageId/set-primary
+router.patch(
+  '/:plantId/images/:imageId/set-primary',
+  protect,
+  setPrimaryUserPlantImage
+);
