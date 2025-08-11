@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllPlants,
+    getPlantById,
     createPlant,
     uploadPlantImages,
     deletePlant,
@@ -14,6 +15,7 @@ const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
 
 router.get('/', getAllPlants);
+router.get('/:id', getPlantById);
 router.post('/', protect, adminOnly, createPlant);
 
 // POST /api/plants/:id/upload

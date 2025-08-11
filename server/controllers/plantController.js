@@ -1,11 +1,105 @@
 const Plant = require('../models/Plant');
 
-// @desc    Get all plants
+// @desc    Get all plants (with filters)
 // @route   GET /api/plants
 exports.getAllPlants = async (req, res) => {
   try {
-    const plants = await Plant.find().sort({ name: 1 });
+    const { tier, light, soil, watering, pets, q } = req.query;
+
+    const and = [];
+
+    // tier
+    if (tier) {
+      and.push({ tier: tier.toLowerCase() });
+    }
+
+    // light (supports 'light' and legacy 'lightRequirement')
+    if (light) {
+      const l = light.toLowerCase();
+      and.push({
+        $or: [
+          { light: l },
+          { lightRequirement: l }, // legacy
+        ],
+      });
+    }
+
+    // soil (supports 'soil' and legacy 'soilType')
+    if (soil) {
+      const s = soil.toLowerCase();
+      and.push({
+        $or: [
+          { soil: s },
+          { soilType: s }, // legacy
+        ],
+      });
+    }
+
+    // pet-friendly (supports 'petFriendly' and legacy 'animalFriendly')
+    if (pets && (pets === '1' || pets === 'true' || pets === true)) {
+      and.push({
+        $or: [
+          { petFriendly: true },
+          { animalFriendly: true }, // legacy
+        ],
+      });
+    }
+
+    // watering (supports 'wateringSchedule' and range on 'wateringFrequencyDays')
+    if (watering) {
+      const w = watering.toLowerCase();
+      let range = null;
+      // map weekly/biweekly/monthly to frequency day ranges
+      if (w === 'weekly') range = { min: 5, max: 8 };        // ~7 days
+      else if (w === 'biweekly') range = { min: 10, max: 16 }; // ~14 days
+      else if (w === 'monthly') range = { min: 25, max: 35 };  // ~30 days
+
+      const or = [{ wateringSchedule: w }]; // textual schedule exact match
+
+      if (range) {
+        or.push({
+          wateringFrequencyDays: { $gte: range.min, $lte: range.max },
+        });
+      }
+
+      // If watering is a numeric like '10-days' (client side fallback), support that too
+      const numericMatch = /^(\d+)(?:-days)?$/.exec(w);
+      if (numericMatch) {
+        const n = parseInt(numericMatch[1], 10);
+        if (!Number.isNaN(n)) {
+          or.push({ wateringFrequencyDays: n });
+        }
+      }
+
+      and.push({ $or: or });
+    }
+
+    // q (text search on name/scientificName, case-insensitive)
+    if (q && q.trim()) {
+      const regex = new RegExp(q.trim(), 'i');
+      and.push({
+        $or: [{ name: regex }, { scientificName: regex }],
+      });
+    }
+
+    const query = and.length ? { $and: and } : {};
+
+    const plants = await Plant.find(query).sort({ name: 1 });
     res.status(200).json(plants);
+  } catch (err) {
+    console.error('getAllPlants error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+// @desc    Get a single plant by id
+// @route   GET /api/plants/:id
+exports.getPlantById = async (req, res) => {
+  try {
+    const plant = await Plant.findById(req.params.id);
+    if (!plant) return res.status(404).json({ message: 'Plant not found' });
+    res.status(200).json(plant);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
