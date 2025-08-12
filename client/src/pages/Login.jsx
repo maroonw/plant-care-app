@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import api from '../api';
 import useAuth from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  const from = location.state?.from?.pathname || '/';
   const [error, setError] = useState('');
 
   const onSubmit = async (e) => {
@@ -19,7 +20,7 @@ export default function Login() {
       // your backend returns: id, username, email, role, token
       const { token, ...rest } = res.data;
       login({ token, user: rest });
-      navigate('/'); // send them home (or back)
+      navigate(from); // send them home (or back)
     } catch (err) {
       console.error(err);
       setError('Invalid email or password.');
