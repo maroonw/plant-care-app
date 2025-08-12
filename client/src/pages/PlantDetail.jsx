@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import useAuth from '../hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 const PlantDetail = () => {
   const { id } = useParams();
@@ -11,7 +12,7 @@ const PlantDetail = () => {
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message] = useState('');
 
   useEffect(() => {
     const fetchPlant = async () => {
@@ -27,23 +28,22 @@ const PlantDetail = () => {
     fetchPlant();
   }, [id]);
 
-  const handleAdd = async () => {
-    if (!isAuthed) {
-      navigate('/login');
-      return;
-    }
-    try {
-      setAdding(true);
-      setMessage('');
-      await api.post('/userplants', { plantId: plant._id });
-      setMessage('Plant added to your collection!');
-    } catch (err) {
-      console.error(err);
-      setMessage('Could not add plant.');
-    } finally {
-      setAdding(false);
-    }
-  };
+const handleAdd = async () => {
+  if (!isAuthed) {
+    navigate('/login');
+    return;
+  }
+  try {
+    setAdding(true);
+    await api.post('/userplants', { plantId: plant._id });
+    toast.success('Plant added to your collection!');
+  } catch (err) {
+    console.error(err);
+    toast.error(err?.response?.data?.message || 'Could not add plant.');
+  } finally {
+    setAdding(false);
+  }
+};
 
   if (loading) return <div className="text-center mt-20 text-green-800">Loading...</div>;
 

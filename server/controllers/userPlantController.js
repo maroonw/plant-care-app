@@ -3,27 +3,19 @@ const CareLog = require('../models/CareLog');
 const { cloudinary } = require('../utils/cloudinary');
 
 // @route   POST /api/userplants
-// @desc    Add a plant to the user's owned list
+// @desc    Add a plant to the user's owned list (allows duplicates)
 // @access  Private (customer only)
 exports.addUserPlant = async (req, res) => {
   const { plantId, nickname, notes, images } = req.body;
 
   try {
-    const exists = await UserPlant.findOne({
-      user: req.user._id,
-      plant: plantId
-    });
-
-    if (exists) {
-      return res.status(400).json({ message: 'You already own this plant.' });
-    }
-
+    // ✅ No "exists" check—allow multiple instances of same plant
     const userPlant = new UserPlant({
       user: req.user._id,
       plant: plantId,
-      nickname,
-      notes,
-      images
+      nickname: nickname || '',
+      notes: notes || '',
+      images: images || []
     });
 
     await userPlant.save();
@@ -32,6 +24,7 @@ exports.addUserPlant = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // @route   GET /api/userplants
 // @desc    Get all plants the user owns
@@ -210,5 +203,29 @@ exports.setPrimaryUserPlantImage = async (req, res) => {
   } catch (err) {
     console.error('Set primary image error:', err);
     res.status(500).json({ message: 'Server error during primary image update' });
+  }
+};
+
+// @route   PATCH /api/userplants/:id
+// @desc    Update nickname/notes on a user plant
+// @access  Private
+exports.updateUserPlant = async (req, res) => {
+  try {
+    const { nickname, notes } = req.body;
+
+    const updated = await UserPlant.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
+      { ...(nickname !== undefined && { nickname }), ...(notes !== undefined && { notes }) },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: 'UserPlant not found' });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error('updateUserPlant error:', err);
+    res.status(500).json({ message: err.message });
   }
 };
