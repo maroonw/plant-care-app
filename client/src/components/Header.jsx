@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
 const Header = () => {
-  const { isAuthed, logout } = useAuth();
+  const { isAuthed, user, logout } = useAuth();
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -20,6 +20,11 @@ const Header = () => {
           {isAuthed && (
             <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link>
           )}
+
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="hover:text-green-600 transition">Admin</Link>
+          )}
+          
         </nav>
 
         <div className="space-x-3">

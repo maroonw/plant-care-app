@@ -6,8 +6,13 @@ import PlantGallery from './pages/PlantGallery';
 import PlantDetail from './pages/PlantDetail';
 import MyPlants from './pages/MyPlants';
 import Login from './pages/Login';
-import Signup from './pages/Signup';              // ✅ add
-import ProtectedRoute from './components/ProtectedRoute'; // ✅ add
+import Signup from './pages/Signup';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminRoute from './components/AdminRoute';
+import AdminPlantsList from './pages/admin/AdminPlantsList';
+import AdminPlantForm from './pages/admin/AdminPlantForm';
+import AdminPlantImages from './pages/admin/AdminPlantImages';
 
 function App() {
   return (
@@ -19,13 +24,22 @@ function App() {
         <Route path="/plantgallery" element={<PlantGallery />} />
         <Route path="/plants/:id" element={<PlantDetail />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />   {/* ✅ new */}
+        <Route path="/signup" element={<Signup />} />
 
         {/* protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/my-plants" element={<MyPlants />} />
-          {/* add more protected pages here later */}
         </Route>
+
+        {/* admin */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/plants" element={<AdminPlantsList />} />
+          <Route path="/admin/plants/new" element={<AdminPlantForm />} />
+          <Route path="/admin/plants/:id/edit" element={<AdminPlantForm />} />
+          <Route path="/admin/plants/:id/images" element={<AdminPlantImages />} />
+        </Route>
+
       </Routes>
     </Router>
   );
