@@ -14,6 +14,11 @@ import AdminPlantsList from './pages/admin/AdminPlantsList';
 import AdminPlantForm from './pages/admin/AdminPlantForm';
 import AdminPlantImages from './pages/admin/AdminPlantImages';
 import AdminModeration from './pages/admin/AdminModeration';
+import BlogIndex from './pages/BlogIndex';
+import CareIndex from './pages/CareIndex';
+import BlogPost from './pages/BlogPost';
+import CarePost from './pages/CarePost';
+import AdminContentAssets from './pages/admin/AdminContentAssets';
 
 function App() {
   return (
@@ -26,6 +31,10 @@ function App() {
         <Route path="/plants/:id" element={<PlantDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/blog" element={<BlogIndex />} />
+        <Route path="/care" element={<CareIndex />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/care/:slug" element={<CarePost />} />
 
         {/* protected */}
         <Route element={<ProtectedRoute />}>
@@ -40,6 +49,7 @@ function App() {
           <Route path="/admin/plants/:id/edit" element={<AdminPlantForm />} />
           <Route path="/admin/plants/:id/images" element={<AdminPlantImages />} />
           <Route path="/admin/moderation" element={<AdminModeration />} />
+          <Route path="/admin/content-assets" element={<AdminContentAssets />} />
         </Route>
 
       </Routes>

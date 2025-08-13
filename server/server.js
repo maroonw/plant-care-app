@@ -9,6 +9,9 @@ const authRoutes = require('./routes/authRoutes');
 const userPlantRoutes = require('./routes/userPlantRoutes');
 const wantedPlantRoutes = require('./routes/wantedPlantRoutes');
 const careLogRoutes = require('./routes/careLogRoutes');
+const contentRoutes = require('./routes/contentRoutes');
+const sitemap = require('./routes/sitemap');
+const path = require('path');
 
 
 const app = express();
@@ -22,6 +25,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/userplants', userPlantRoutes);
 app.use('/api/wanted', wantedPlantRoutes);
 app.use('/api/carelog', careLogRoutes);
+app.use('/content-assets', express.static(path.join(__dirname, 'content', 'assets')));
+app.use('/', contentRoutes); //may be wrong path ******
+app.use('/', sitemap);
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

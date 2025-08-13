@@ -46,6 +46,42 @@ const PlantDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const [related, setRelated] = useState({ blog: [], care: [] });
+
+    useEffect(() => {
+      const loadRelated = async () => {
+        try {
+          if (!plant?.slug) return;
+          const r = await api.get(`/content/related?plantSlug=${plant.slug}`);
+          setRelated(r.data || { blog: [], care: [] });
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      loadRelated();
+    }, [plant?.slug]);
+
+      const slugify = (s='') =>
+        s.toLowerCase()
+        .replace(/[\s\._/]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      useEffect(() => {
+        const loadRelated = async () => {
+          try {
+            const plantSlug = plant?.slug || slugify(plant?.name || '');
+            if (!plantSlug) return;
+            const r = await api.get(`/content/related`, { params: { plantSlug } });
+            setRelated(r.data || { blog: [], care: [] });
+          } catch (e) {
+            console.error(e);
+          }
+        };
+        loadRelated();
+      }, [plant?.slug, plant?.name]);
+
   const handleAdd = async () => {
     if (!isAuthed) {
       navigate('/login');
@@ -145,6 +181,40 @@ const PlantDetail = () => {
           </p>
         </div>
       )}
+
+      {/* Related content */}
+      {(related.care?.length || related.blog?.length) ? (
+        <div className="mt-12">
+          <h2 className="text-2xl font-semibold text-green-800 mb-4">Learn More</h2>
+
+          {related.care?.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold mb-2">Care Guides</h3>
+              <ul className="list-disc ml-6">
+                {related.care.map((c) => (
+                  <li key={c.slug}>
+                    <a className="text-green-700 hover:underline" href={`/care/${c.slug}`}>{c.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {related.blog?.length > 0 && (
+            <div>
+              <h3 className="text-xl font-semibold mb-2">Blog Posts</h3>
+              <ul className="list-disc ml-6">
+                {related.blog.map((b) => (
+                  <li key={b.slug}>
+                    <a className="text-green-700 hover:underline" href={`/blog/${b.slug}`}>{b.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : null}
+
 
       {/* Approved community images */}
       {community.length > 0 && (

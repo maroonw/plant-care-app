@@ -1,0 +1,140 @@
+name,scientificName,tier,wateringFrequencyDays,fertilizingFrequencyDays,light,soil,petFriendly
+Snake Plant,Sansevieria trifasciata,easy,14,60,low,well-draining,False
+Spider Plant,Chlorophytum comosum,easy,7,45,bright,well-draining,True
+Pothos,Epipremnum aureum,easy,7,45,low,well-draining,False
+ZZ Plant,Zamioculcas zamiifolia,easy,14,60,low,well-draining,False
+Monstera deliciosa,Monstera deliciosa,standard,7,45,medium,well-draining,False
+Peace Lily,Spathiphyllum wallisii,standard,7,45,low,moist,False
+Aloe Vera,Aloe barbadensis miller,standard,14,60,direct,cactus,False
+Rubber Plant,Ficus elastica,standard,7,45,bright,well-draining,False
+Fiddle Leaf Fig,Ficus lyrata,hard,7,45,bright,well-draining,False
+Chinese Evergreen,Aglaonema commutatum,easy,10,60,low,well-draining,False
+Dracaena marginata,Dracaena marginata,standard,10,60,medium,well-draining,False
+Areca Palm,Dypsis lutescens,standard,7,45,bright,well-draining,True
+Bird of Paradise,Strelitzia nicolai,standard,7,45,bright,well-draining,False
+Parlor Palm,Chamaedorea elegans,easy,10,60,low,well-draining,True
+Dieffenbachia,Dieffenbachia seguine,standard,7,45,medium,moist,False
+Calathea Medallion,Calathea veitchiana,hard,4,30,medium,moist,True
+Philodendron Brasil,Philodendron hederaceum,easy,7,45,medium,well-draining,False
+Philodendron Heartleaf,Philodendron scandens,easy,7,45,medium,well-draining,False
+Swiss Cheese Vine,Monstera adansonii,standard,7,45,medium,well-draining,False
+Hoya Carnosa,Hoya carnosa,easy,10,60,bright,well-draining,True
+Jade Plant,Crassula ovata,standard,14,60,bright,cactus,False
+Sedum morganianum,Sedum morganianum,standard,14,60,bright,cactus,True
+String of Pearls,Senecio rowleyanus,hard,10,60,bright,cactus,False
+String of Hearts,Ceropegia woodii,easy,10,60,bright,well-draining,True
+Peperomia Watermelon,Peperomia argyreia,easy,7,45,medium,well-draining,True
+Peperomia Obtusifolia,Peperomia obtusifolia,easy,10,60,medium,well-draining,True
+Pilea Peperomioides,Pilea peperomioides,standard,7,45,bright,peat-based,True
+Nerve Plant,Fittonia albivenis,hard,3,30,low,moist,True
+Boston Fern,Nephrolepis exaltata,hard,3,30,bright,moist,True
+Kimberly Queen Fern,Nephrolepis obliterata,standard,4,30,bright,moist,True
+Staghorn Fern,Platycerium bifurcatum,hard,4,30,bright,moist,True
+Maidenhair Fern,Adiantum raddianum,hard,2,30,bright,moist,True
+Cast Iron Plant,Aspidistra elatior,easy,14,60,low,well-draining,True
+Prayer Plant,Maranta leuconeura,standard,4,30,medium,moist,True
+Rattlesnake Plant,Calathea lancifolia,hard,4,30,medium,moist,True
+ZZ Raven,Zamioculcas zamiifolia 'Raven',easy,14,60,low,well-draining,False
+Purple Shamrock,Oxalis triangularis,standard,7,45,bright,well-draining,True
+Croton,Codiaeum variegatum,hard,5,30,bright,well-draining,False
+Schefflera,Schefflera arboricola,standard,7,45,bright,well-draining,False
+Norfolk Island Pine,Araucaria heterophylla,hard,7,45,bright,well-draining,True
+Anthurium,Anthurium andraeanum,standard,7,45,bright,well-draining,False
+Philodendron Pink Princess,Philodendron erubescens,hard,7,45,bright,well-draining,False
+Philodendron Birkin,Philodendron 'Birkin',standard,7,45,medium,well-draining,False
+Philodendron Xanadu,Thaumatophyllum xanadu,standard,7,45,bright,well-draining,False
+Philodendron Selloum,Philodendron bipinnatifidum,standard,7,45,bright,well-draining,False
+Golden Pothos,Epipremnum aureum 'Golden',easy,7,45,low,well-draining,False
+Marble Queen Pothos,Epipremnum aureum 'Marble Queen',easy,7,45,medium,well-draining,False
+Neon Pothos,Epipremnum aureum 'Neon',easy,7,45,medium,well-draining,False
+Satin Pothos,Scindapsus pictus,standard,7,45,medium,well-draining,False
+Philodendron Micans,Philodendron hederaceum 'Micans',standard,7,45,medium,well-draining,False
+Tradescantia Zebrina,Tradescantia zebrina,easy,5,30,bright,well-draining,True
+Tradescantia Nanouk,Tradescantia albiflora 'Nanouk',easy,5,30,bright,well-draining,True
+English Ivy,Hedera helix,standard,5,45,bright,well-draining,False
+Fatsia Japonica,Fatsia japonica,standard,7,45,medium,well-draining,True
+Schefflera Amate,Schefflera actinophylla,standard,7,45,bright,well-draining,False
+Ponytail Palm,Beaucarnea recurvata,easy,14,60,bright,cactus,True
+Kentia Palm,Howea forsteriana,standard,7,45,medium,well-draining,True
+Lady Palm,Rhapis excelsa,standard,7,45,medium,well-draining,True
+Money Tree,Pachira aquatica,easy,7,45,medium,well-draining,True
+Lucky Bamboo,Dracaena sanderiana,easy,7,45,low,moist,True
+Bird’s Nest Fern,Asplenium nidus,standard,4,30,medium,moist,True
+Haworthia,Haworthia cooperi,easy,14,60,bright,cactus,True
+Gasteria,Gasteria bicolor,easy,14,60,bright,cactus,True
+Echeveria,Echeveria elegans,standard,10,60,bright,cactus,True
+Kalanchoe Blossfeldiana,Kalanchoe blossfeldiana,standard,10,60,bright,cactus,True
+Christmas Cactus,Schlumbergera bridgesii,standard,10,60,medium,cactus,True
+Thanksgiving Cactus,Schlumbergera truncata,standard,10,60,medium,cactus,True
+Euphorbia trigona,Euphorbia trigona,standard,14,60,bright,cactus,False
+Pencil Cactus,Euphorbia tirucalli,standard,14,60,bright,cactus,False
+Crown of Thorns,Euphorbia milii,standard,10,60,bright,cactus,False
+Ox Tongue,Gasteria disticha,easy,14,60,bright,cactus,True
+Bromeliad Guzmania,Guzmania lingulata,standard,7,45,bright,well-draining,True
+Bromeliad Aechmea,Aechmea fasciata,standard,7,45,bright,well-draining,True
+Bromeliad Neoregelia,Neoregelia carolinae,standard,7,45,bright,well-draining,True
+Air Plant,Tillandsia ionantha,easy,4,30,bright,specialty,True
+Olive Tree (Indoor),Olea europaea,hard,5,30,bright,well-draining,True
+Meyer Lemon (Indoor),Citrus x meyeri,hard,4,30,bright,well-draining,False
+Kumquat (Indoor),Citrus japonica,hard,4,30,bright,well-draining,False
+Bay Laurel,Laurus nobilis,standard,7,45,bright,well-draining,False
+Coffee Plant,Coffea arabica,standard,5,30,medium,moist,False
+Banana (Dwarf Cavendish),Musa acuminata,hard,3,30,bright,moist,True
+Alocasia Polly,Alocasia amazonica,hard,4,30,bright,moist,False
+Alocasia Zebrina,Alocasia zebrina,hard,4,30,bright,moist,False
+Colocasia Black Magic,Colocasia esculenta,hard,3,30,bright,moist,False
+Syngonium Podophyllum,Syngonium podophyllum,easy,6,45,medium,well-draining,True
+Syngonium Albo,Syngonium podophyllum 'Albo',hard,6,45,bright,well-draining,True
+Aglaonema Silver Bay,Aglaonema commutatum 'Silver Bay',easy,10,60,low,well-draining,False
+Aglaonema Red Siam,Aglaonema 'Siam Aurora',easy,10,60,medium,well-draining,False
+Schefflera Trinette,Schefflera arboricola 'Trinette',standard,7,45,bright,well-draining,False
+Hoya Kerrii,Hoya kerrii,easy,10,60,bright,well-draining,True
+Hoya Obovata,Hoya obovata,easy,10,60,bright,well-draining,True
+Hoya Pubicalyx,Hoya pubicalyx,easy,10,60,bright,well-draining,True
+Begonia Rex,Begonia rex-cultorum,hard,4,30,medium,moist,False
+Angel Wing Begonia,Begonia coccinea,standard,5,30,bright,moist,False
+Polka Dot Plant,Hypoestes phyllostachya,standard,4,30,bright,moist,True
+Coleus (Indoor),Plectranthus scutellarioides,standard,4,30,bright,moist,True
+Tineke Rubber Plant,Ficus elastica 'Tineke',standard,7,45,bright,well-draining,False
+Ruby Rubber Plant,Ficus elastica 'Ruby',standard,7,45,bright,well-draining,False
+Ficus Audrey,Ficus benghalensis,hard,7,45,bright,well-draining,False
+Ficus Benjamina,Ficus benjamina,hard,6,45,bright,well-draining,False
+Dumb Cane Compacta,Dieffenbachia 'Compacta',standard,7,45,medium,moist,False
+Philodendron Gloriosum,Philodendron gloriosum,hard,6,45,bright,well-draining,False
+Philodendron Melanochrysum,Philodendron melanochrysum,hard,6,45,bright,well-draining,False
+Monstera Thai Constellation,Monstera deliciosa 'Thai Constellation',hard,7,45,bright,well-draining,False
+Monstera Peru,Monstera karstenianum,standard,7,45,medium,well-draining,False
+Monstera Siltepecana,Monstera siltepecana,standard,7,45,medium,well-draining,False
+Rhipsalis,Rhipsalis baccifera,easy,10,60,medium,well-draining,True
+Dischidia Ovata,Dischidia ovata,easy,10,60,bright,well-draining,True
+String of Dolphins,Senecio peregrinus,standard,10,60,bright,cactus,False
+String of Turtles,Peperomia prostrata,standard,7,45,bright,well-draining,True
+String of Bananas,Senecio radicans,standard,10,60,bright,cactus,False
+Arrowhead Vine Pink,Syngonium 'Neon Robusta',standard,6,45,medium,well-draining,True
+Arrowhead Vine White,Syngonium 'White Butterfly',easy,6,45,medium,well-draining,True
+Calathea Orbifolia,Goeppertia orbifolia,hard,4,30,medium,moist,True
+Calathea White Fusion,Calathea lietzei 'White Fusion',hard,4,30,medium,moist,True
+Calathea Freddie,Calathea concinna 'Freddie',hard,4,30,medium,moist,True
+Pilea Involucrata,Pilea involucrata,easy,6,45,medium,well-draining,True
+Alocasia Frydek,Alocasia micholitziana 'Frydek',hard,4,30,bright,moist,False
+Zebra Haworthia,Haworthiopsis fasciata,easy,14,60,bright,cactus,True
+Baby Rubber Plant,Peperomia obtusifolia 'Green',easy,10,60,medium,well-draining,True
+Silver Bay Aglaonema,Aglaonema 'Silver Bay',easy,10,60,low,well-draining,False
+Domino Peace Lily,Spathiphyllum 'Domino',standard,7,45,low,moist,False
+Corn Plant,Dracaena fragrans,standard,10,60,medium,well-draining,False
+Warneckii Dracaena,Dracaena deremensis 'Warneckii',standard,10,60,medium,well-draining,False
+Janet Craig Dracaena,Dracaena deremensis 'Janet Craig',standard,10,60,medium,well-draining,False
+Compacta Dracaena,Dracaena compacta,standard,10,60,medium,well-draining,False
+Yucca Cane,Yucca elephantipes,standard,10,60,bright,well-draining,True
+Asparagus Fern,Asparagus setaceus,standard,4,30,bright,moist,False
+Hoya Wayetii,Hoya wayetii,easy,10,60,bright,well-draining,True
+Hoya Krimson Queen,Hoya carnosa 'Krimson Queen',easy,10,60,bright,well-draining,True
+Hoya Krimson Princess,Hoya carnosa 'Krimson Princess',easy,10,60,bright,well-draining,True
+Baltic Blue Pothos,Epipremnum pinnatum 'Baltic Blue',standard,7,45,medium,well-draining,False
+Cebu Blue Pothos,Epipremnum pinnatum 'Cebu Blue',standard,7,45,medium,well-draining,False
+Philodendron Prince of Orange,Philodendron 'Prince of Orange',standard,7,45,bright,well-draining,False
+Philodendron White Wizard,Philodendron 'White Wizard',hard,7,45,bright,well-draining,False
+Philodendron White Knight,Philodendron 'White Knight',hard,7,45,bright,well-draining,False
+Alocasia Dragon Scale,Alocasia baginda 'Dragon Scale',hard,4,30,bright,moist,False
+Homalomena Emerald Gem,Homalomena 'Emerald Gem',standard,7,45,medium,well-draining,False
+Pachira Aquatica Braided,Pachira aquatica (braided),easy,7,45,medium,well-draining,True

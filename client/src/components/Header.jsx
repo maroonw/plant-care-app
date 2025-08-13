@@ -14,7 +14,9 @@ const Header = () => {
 
         <nav className="hidden md:flex space-x-6 text-gray-700 font-medium">
           <Link to="/" className="hover:text-green-600 transition">Home</Link>
-          <Link to="/plantgallery" className="hover:text-green-600 transition">Plants</Link>
+          <a href="/plantgallery" className="hover:text-green-700">Plants</a>
+          <a href="/care" className="hover:text-green-700">Care Guides</a>
+          <a href="/blog" className="hover:text-green-700">Blog</a>
           <Link to="/community" className="hover:text-green-600 transition">Community</Link>
           <Link to="/about" className="hover:text-green-600 transition">About</Link>
           {isAuthed && (
