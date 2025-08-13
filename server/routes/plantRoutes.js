@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { getAllPlants,
-    getPlantById,
-    createPlant,
-    uploadPlantImages,
-    deletePlant,
-    uploadCommunityImages,
-    getCommunityImages,
-    updatePlant } = require('../controllers/plantController');
+
+const {
+  getAllPlants,
+  getPlantById,
+  createPlant,
+  uploadPlantImages,
+  deletePlant,
+  uploadCommunityImages,
+  updatePlant,
+  setPrimaryPlantImage,
+  deletePlantImage,
+  getApprovedCommunityImages,      // ✅ new
+  listPendingCommunityImages,      // ✅ new (admin)
+  approveCommunityImage,           // ✅ new (admin)
+  rejectCommunityImage,            // ✅ new (admin)
+} = require('../controllers/plantController');
 
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const multer = require('multer');
@@ -15,22 +23,21 @@ const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
 
 router.get('/', getAllPlants);
+router.get('/admin/community/pending', protect, adminOnly, listPendingCommunityImages);
+router.patch('/admin/community/:plantId/:imageId/approve', protect, adminOnly, approveCommunityImage);
+router.delete('/admin/community/:plantId/:imageId', protect, adminOnly, rejectCommunityImage);
+
 router.get('/:id', getPlantById);
+router.get('/:id/community', getApprovedCommunityImages);
+
 router.post('/', protect, adminOnly, createPlant);
-
-// POST /api/plants/:id/upload
 router.post('/:id/upload', protect, adminOnly, upload.array('images', 5), uploadPlantImages);
-
-// PATCH /api/plants/:id
 router.patch('/:id', protect, adminOnly, updatePlant);
-
-// DELETE /api/plants/:id
 router.delete('/:id', protect, adminOnly, deletePlant);
+router.patch('/:id/images/:imageId/set-primary', protect, adminOnly, setPrimaryPlantImage);
+router.delete('/:id/images/:imageId', protect, adminOnly, deletePlantImage);
 
-// POST /api/plants/:id/community
 router.post('/:id/community', protect, upload.array('images', 5), uploadCommunityImages);
 
-// GET /api/plants/:id/community
-router.get('/:id/community', getCommunityImages);
-
 module.exports = router;
+

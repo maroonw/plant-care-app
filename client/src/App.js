@@ -13,6 +13,7 @@ import AdminRoute from './components/AdminRoute';
 import AdminPlantsList from './pages/admin/AdminPlantsList';
 import AdminPlantForm from './pages/admin/AdminPlantForm';
 import AdminPlantImages from './pages/admin/AdminPlantImages';
+import AdminModeration from './pages/admin/AdminModeration';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/admin/plants/new" element={<AdminPlantForm />} />
           <Route path="/admin/plants/:id/edit" element={<AdminPlantForm />} />
           <Route path="/admin/plants/:id/images" element={<AdminPlantImages />} />
+          <Route path="/admin/moderation" element={<AdminModeration />} />
         </Route>
 
       </Routes>
