@@ -4,6 +4,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { TIERS, LIGHTS, SOILS } from '../../constants/plantEnums';
 
+const SOIL_LABELS = {
+  'all-purpose': 'All-Purpose Potting Mix',
+  'well-draining-aerated': 'Well-Draining & Aerated Mix',
+  'moisture-retentive': 'Moisture-Retentive Mix',
+  'cactus-succulent': 'Cactus & Succulent Mix',
+  'orchid-epiphytic': 'Orchid & Epiphytic Mix',
+  'specialty-acidic': 'Specialty Acidic Mix',
+};
+
 export default function AdminPlantForm() {
   const { id } = useParams(); // if present => edit
   const navigate = useNavigate();
@@ -25,10 +34,8 @@ export default function AdminPlantForm() {
     const load = async () => {
       if (!isEdit) return;
       try {
-        const res = await api.get(`/plants`, { params: { id } }); // optional: you might prefer /plants/:id
-        // If you have GET /api/plants/:id, use that:
-        // const res = await api.get(`/plants/${id}`);
-        const data = Array.isArray(res.data) ? res.data.find(p => p._id === id) : res.data;
+        const res = await api.get(`/plants/${id}`);
+        const data = res.data;
         if (!data) {
           toast.error('Plant not found');
           navigate('/admin/plants');
@@ -42,7 +49,7 @@ export default function AdminPlantForm() {
           fertilizingFrequencyDays: data.fertilizingFrequencyDays ?? 30,
           light: data.light || 'medium',
           soil: data.soil || 'well-draining',
-          petFriendly: !!(data.petFriendly ?? data.animalFriendly),
+          petFriendly: !!data.petFriendly,
         });
       } catch (e) {
         console.error(e);
@@ -111,7 +118,11 @@ export default function AdminPlantForm() {
           <div>
             <label className="block text-sm mb-1">Soil</label>
             <select name="soil" value={form.soil} onChange={onChange} className="w-full border rounded px-3 py-2">
-              {SOILS.map(t => <option key={t} value={t}>{t}</option>)}
+              {SOILS.map(s => (
+               <option key={s} value={s}>
+                {SOIL_LABELS[s] ?? s}
+                </option>
+                ))}
             </select>
           </div>
           <div>

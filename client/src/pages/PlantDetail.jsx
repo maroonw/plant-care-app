@@ -61,27 +61,7 @@ const PlantDetail = () => {
       loadRelated();
     }, [plant?.slug]);
 
-      const slugify = (s='') =>
-        s.toLowerCase()
-        .replace(/[\s\._/]+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '');
-
-      useEffect(() => {
-        const loadRelated = async () => {
-          try {
-            const plantSlug = plant?.slug || slugify(plant?.name || '');
-            if (!plantSlug) return;
-            const r = await api.get(`/content/related`, { params: { plantSlug } });
-            setRelated(r.data || { blog: [], care: [] });
-          } catch (e) {
-            console.error(e);
-          }
-        };
-        loadRelated();
-      }, [plant?.slug, plant?.name]);
-
+    
   const handleAdd = async () => {
     if (!isAuthed) {
       navigate('/login');

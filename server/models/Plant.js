@@ -29,7 +29,17 @@ const plantSchema = new mongoose.Schema({
   wateringFrequencyDays: Number,
   fertilizingFrequencyDays: Number,
   light: { type: String, enum: ['low', 'medium', 'bright', 'direct'] },
-  soil: { type: String, enum: ['well-draining', 'moist', 'dry', 'specialty'] },
+  soil: { type: String,
+    enum: [
+      'all-purpose',
+      'well-draining-aerated',
+      'moisture-retentive',
+      'cactus-succulent',
+      'orchid-epiphytic',
+      'specialty-acidic'],
+      required: true,
+      default: 'well-draining-aerated'
+    },
   petFriendly: Boolean,
   toxicToPets: Boolean,
   images: [imageSchema],

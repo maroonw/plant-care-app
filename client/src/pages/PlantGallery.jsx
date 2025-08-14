@@ -2,10 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import api from '../api';
 import PlantCard from '../components/PlantCard';
 
-const TIERS = ['easy', 'standard', 'hard'];
-const LIGHTS = ['low', 'medium', 'bright', 'direct'];
-const SOILS = ['well-draining', 'moist', 'dry', 'specialty', 'peat-based', 'cactus'];
+import { TIERS, LIGHTS, SOILS } from '../constants/plantEnums'; // adjust relative path if needed
 const WATERING_OPTIONS = ['weekly', 'biweekly', 'monthly'];
+
+const SOIL_LABELS = {
+  'all-purpose': 'All-Purpose Potting Mix',
+  'well-draining-aerated': 'Well-Draining & Aerated Mix',
+  'moisture-retentive': 'Moisture-Retentive Mix',
+  'cactus-succulent': 'Cactus & Succulent Mix',
+  'orchid-epiphytic': 'Orchid & Epiphytic Mix',
+  'specialty-acidic': 'Specialty Acidic Mix',
+};
+
 
 const PlantGallery = () => {
   const [plants, setPlants] = useState([]);
@@ -95,7 +103,11 @@ const PlantGallery = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Soil</label>
             <select value={soil} onChange={(e) => setSoil(e.target.value)} className="w-full border rounded-md px-3 py-2">
               <option value="">All soil</option>
-              {SOILS.map(s => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}
+              {SOILS.map(s => (
+                <option key={s} value={s}>
+                  {SOIL_LABELS[s] ?? s}
+                </option>
+              ))}
             </select>
           </div>
 

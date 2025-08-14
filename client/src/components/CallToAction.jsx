@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const CallToAction = () => {
   return (
@@ -10,12 +11,9 @@ const CallToAction = () => {
         <p className="text-lg md:text-xl mb-8">
           Explore our curated collection of easy-care houseplants and find your next leafy friend.
         </p>
-        <a
-          href="/plants"
-          className="bg-white text-green-800 font-semibold px-6 py-3 rounded-full shadow-lg hover:bg-gray-100 transition"
-        >
+        <Link to="/plantgallery" className="bg-white text-green-800 font-semibold px-6 py-3 rounded-full shadow-lg hover:bg-gray-100 transition">
           Browse All Plants
-        </a>
+        </Link>
       </div>
     </section>
   );

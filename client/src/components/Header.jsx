@@ -14,9 +14,9 @@ const Header = () => {
 
         <nav className="hidden md:flex space-x-6 text-gray-700 font-medium">
           <Link to="/" className="hover:text-green-600 transition">Home</Link>
-          <a href="/plantgallery" className="hover:text-green-700">Plants</a>
-          <a href="/care" className="hover:text-green-700">Care Guides</a>
-          <a href="/blog" className="hover:text-green-700">Blog</a>
+          <Link to="/plantgallery" className="hover:text-green-700">Plants</Link>
+          <Link to="/care" className="hover:text-green-700">Care Guides</Link>
+          <Link to="/blog" className="hover:text-green-700">Blog</Link>
           <Link to="/community" className="hover:text-green-600 transition">Community</Link>
           <Link to="/about" className="hover:text-green-600 transition">About</Link>
           {isAuthed && (
@@ -35,9 +35,9 @@ const Header = () => {
               <Link to="/login" className="text-sm font-medium text-green-700 hover:text-green-900 transition">
                 Login
               </Link>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-700 transition">
+              <Link to="/signup" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-700 transition">
                 Sign Up
-              </button>
+              </Link>
             </>
           ) : (
             <button
