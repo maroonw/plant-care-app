@@ -125,13 +125,27 @@ export default function AdminPlantForm() {
                 ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm mb-1">Watering Frequency (days)</label>
-            <input type="number" min={1} name="wateringFrequencyDays" value={form.wateringFrequencyDays} onChange={onChange} className="w-full border rounded px-3 py-2" />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Fertilizing Frequency (days)</label>
-            <input type="number" min={1} name="fertilizingFrequencyDays" value={form.fertilizingFrequencyDays} onChange={onChange} className="w-full border rounded px-3 py-2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Recommended Watering (days)</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full border rounded px-3 py-2"
+                value={form.wateringFrequencyDays ?? 7}
+                onChange={(e) => setForm(f => ({ ...f, wateringFrequencyDays: Number(e.target.value) }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Recommended Fertilizing (days)</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full border rounded px-3 py-2"
+                value={form.fertilizingFrequencyDays ?? 30}
+                onChange={(e) => setForm(f => ({ ...f, fertilizingFrequencyDays: Number(e.target.value) }))}
+              />
+            </div>
           </div>
           <label className="flex items-center gap-2 mt-2">
             <input type="checkbox" name="petFriendly" checked={form.petFriendly} onChange={onChange} className="h-4 w-4 accent-green-600" />

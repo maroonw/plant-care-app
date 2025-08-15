@@ -19,7 +19,7 @@ function daysUntil(date) {
 }
 function fmtDays(n) {
   if (!Number.isFinite(n)) return '—';
-  if (n <= 0) return 'Due now';
+  if (n < 0) return `${Math.abs(n)} day${n === -1 ? '' : 's'} overdue`;
   if (n === 1) return 'in 1 day';
   return `in ${n} days`;
 }
@@ -81,6 +81,7 @@ export default function MyPlants() {
   const [sortMode, setSortMode] = useState('next'); // 'next' | 'next-water' | 'next-fertilize' | 'name'
   const [taskFilter, setTaskFilter] = useState('all'); // 'all' | 'water' | 'fertilize'
   const [dueOnly, setDueOnly] = useState(false);
+  const [overdueFirst, setOverdueFirst] = useState(true);
   const [dueDays, setDueDays] = useState(7);
   const [history, setHistory] = useState({}); // { [userPlantId]: { loading, logs, open } }
 
@@ -117,6 +118,21 @@ export default function MyPlants() {
 
   // Sort by chosen mode
   const list = useMemo(() => {
+    
+  const cmpDays = (ad, bd, aname, bname) => {
+    // Overdue first if enabled
+    if (overdueFirst) {
+      const aOver = Number.isFinite(ad) && ad <= 0;
+      const bOver = Number.isFinite(bd) && bd <= 0;
+      if (aOver !== bOver) return aOver ? -1 : 1;
+    }
+    // Normal ascending (Infinity last)
+    if (ad === bd) return aname.localeCompare(bname);
+    if (ad === Infinity) return 1;
+    if (bd === Infinity) return -1;
+    return ad - bd;
+  };    
+    
     const arr = [...filtered];
     switch (sortMode) {
       case 'name':
@@ -159,8 +175,9 @@ export default function MyPlants() {
         arr.sort((a, b) => {
           const ad = a.any?.days ?? Infinity;
           const bd = b.any?.days ?? Infinity;
-          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
-          return ad - bd;
+          const an = a.up.plant?.name || '';
+          const bn = b.up.plant?.name || '';
+          return cmpDays(ad, bd, an, bn);
         });
         break;
     }
@@ -199,6 +216,16 @@ export default function MyPlants() {
               <option value="repot">Repot</option>
               <option value="rotate">Rotate</option>
             </select>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="accent-green-600"
+              checked={overdueFirst}
+              onChange={(e) => setOverdueFirst(e.target.checked)}
+            />
+            <span>Overdue first</span>
           </label>
 
           <label className="flex items-center gap-2">
