@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
   getAllPlants,
-  getPlantById,
+  getPlantByIdOrSlug,
   createPlant,
   uploadPlantImages,
   deletePlant,
@@ -27,7 +27,7 @@ router.get('/admin/community/pending', protect, adminOnly, listPendingCommunityI
 router.patch('/admin/community/:plantId/:imageId/approve', protect, adminOnly, approveCommunityImage);
 router.delete('/admin/community/:plantId/:imageId', protect, adminOnly, rejectCommunityImage);
 
-router.get('/:id', getPlantById);
+router.get('/:id', getPlantByIdOrSlug);
 router.get('/:id/community', getApprovedCommunityImages);
 
 router.post('/', protect, adminOnly, createPlant);

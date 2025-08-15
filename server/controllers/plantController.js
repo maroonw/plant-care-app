@@ -1,5 +1,18 @@
 const Plant = require('../models/Plant');
 const { cloudinary } = require('../utils/cloudinary')
+const mongoose = require('mongoose');
+
+
+async function findPlantByIdOrSlug(idOrSlug) {
+  // Try ObjectId -> else slug
+  if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
+    const byId = await Plant.findById(idOrSlug);
+    if (byId) return byId;
+  }
+  // slug is stored lowercase; keep exact match
+  return Plant.findOne({ slug: String(idOrSlug).toLowerCase() });
+}
+
 
 // @desc    Get all plants (with filters)
 // @route   GET /api/plants
@@ -94,15 +107,16 @@ exports.getAllPlants = async (req, res) => {
 };
 
 
-// @desc    Get a single plant by id
-// @route   GET /api/plants/:id
-exports.getPlantById = async (req, res) => {
+// @desc    Get a single plant by id **or slug**
+// @route   GET /api/plants/:idOrSlug
+exports.getPlantByIdOrSlug = async (req, res) => {
   try {
-    const plant = await Plant.findById(req.params.id);
+    const plant = await findPlantByIdOrSlug(req.params.id);
     if (!plant) return res.status(404).json({ message: 'Plant not found' });
-    res.status(200).json(plant);
+    return res.status(200).json(plant);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('getPlantByIdOrSlug error:', err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -193,24 +207,20 @@ exports.deletePlant = async (req, res) => {
   }
 };
 
-// @desc    Upload community images to a plant
-// @route   POST /api/plants/:id/community
-// @access  Private (any signed-in user)
+// @desc    Upload community images (pending moderation)
+// @route   POST /api/plants/:idOrSlug/community
 exports.uploadCommunityImages = async (req, res) => {
   try {
-    const plant = await Plant.findById(req.params.id);
+    const plant = await findPlantByIdOrSlug(req.params.id);
     if (!plant) return res.status(404).json({ message: 'Plant not found' });
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No images uploaded' });
     }
 
-    // Build "First L." display name
     const first = (req.user.firstName || '').trim();
     const last = (req.user.lastName || '').trim();
-    const submittedByName = first
-      ? `${first} ${last ? last.charAt(0).toUpperCase() + '.' : ''}`
-      : 'Anonymous';
+    const submittedByName = first ? `${first} ${last ? last.charAt(0).toUpperCase() + '.' : ''}` : 'Anonymous';
 
     const newImages = req.files.map(file => ({
       url: file.path,
@@ -224,28 +234,25 @@ exports.uploadCommunityImages = async (req, res) => {
     plant.communityImages.push(...newImages);
     await plant.save();
 
-    res.status(200).json({
-      message: 'Community images submitted and pending moderation',
-      submitted: newImages.length,
-    });
+    return res.status(200).json({ ok: true, count: newImages.length });
   } catch (err) {
-    console.error('Community image upload error:', err);
-    res.status(500).json({ message: 'Server error during upload' });
+    console.error('uploadCommunityImages error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @route GET /api/plants/:id/community
-// @desc  Public: only approved community images
+// @desc    Get approved community images for a plant
+// @route   GET /api/plants/:idOrSlug/community
 exports.getApprovedCommunityImages = async (req, res) => {
   try {
-    const plant = await Plant.findById(req.params.id);
+    const plant = await findPlantByIdOrSlug(req.params.id);
     if (!plant) return res.status(404).json({ message: 'Plant not found' });
 
-    const images = (plant.communityImages || []).filter(ci => ci.status === 'approved');
-    res.json({ plantId: plant._id, images });
+    const approved = (plant.communityImages || []).filter(img => img.status === 'approved');
+    return res.json({ images: approved });
   } catch (err) {
     console.error('getApprovedCommunityImages error:', err);
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 

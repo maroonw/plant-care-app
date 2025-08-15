@@ -1,4 +1,5 @@
 const UserPlant = require('../models/UserPlant');
+const Plant = require('../models/Plant');
 const CareLog = require('../models/CareLog');
 const { cloudinary } = require('../utils/cloudinary');
 
@@ -6,37 +7,51 @@ const { cloudinary } = require('../utils/cloudinary');
 // @desc    Add a plant to the user's owned list (allows duplicates)
 // @access  Private (customer only)
 exports.addUserPlant = async (req, res) => {
-  const { plantId, nickname, notes, images } = req.body;
-
-  const now = new Date();
-  const cs = {
-    // you can pull from Plant defaults if you have them; otherwise keep these
-    wateringFrequencyDays: 7,
-    fertilizingFrequencyDays: 30,
-    repotIntervalMonths: 18,
-    rotateIntervalDays: 14,
-    isCustom: false,
-  };
+  const { plantId, nickname, notes } = req.body;
 
   try {
-    // ✅ No "exists" check—allow multiple instances of same plant
-    const userPlant = new UserPlant({
+    // Load the Plant to pick up recommended schedule
+    const plant = await Plant.findById(plantId);
+    if (!plant) return res.status(404).json({ message: 'Plant not found' });
+
+    // recommendations from Plant (fallbacks if absent)
+    const recWaterDays = Number(plant.wateringFrequencyDays) || 7;
+    const recFertDays  = Number(plant.fertilizingFrequencyDays) || 30;
+    const recRepotM    = 18; // you can derive this from Plant later if you add it
+    const recRotateD   = 14; // idem
+
+    const now = new Date();
+    const nextWater = new Date(now.getTime() + recWaterDays * 86400000);
+    const nextFert  = new Date(now.getTime() + recFertDays  * 86400000);
+    const nextRepot = new Date(now);
+    nextRepot.setMonth(nextRepot.getMonth() + recRepotM);
+    const nextRotate = new Date(now.getTime() + recRotateD * 86400000);
+
+    const doc = await UserPlant.create({
       user: req.user._id,
-      plant: plantId,
+      plant: plant._id,
       nickname: nickname || '',
       notes: notes || '',
-      careSchedule: cs,
-      nextWateringDue: new Date(now.getTime() + cs.wateringFrequencyDays * 86400000),
-      nextFertilizingDue: new Date(now.getTime() + cs.fertilizingFrequencyDays * 86400000),
-      nextRepotDue: new Date(new Date(now).setMonth(now.getMonth() + cs.repotIntervalMonths)),
-      nextRotateDue: new Date(now.getTime() + cs.rotateIntervalDays * 86400000),
-      images: images || []
+      careSchedule: {
+        wateringFrequencyDays: recWaterDays,
+        fertilizingFrequencyDays: recFertDays,
+        repotIntervalMonths: recRepotM,
+        rotateIntervalDays: recRotateD,
+        isCustom: false,
+      },
+      nextWateringDue: nextWater,
+      nextFertilizingDue: nextFert,
+      nextRepotDue: nextRepot,
+      nextRotateDue: nextRotate,
     });
 
-    await userPlant.save();
-    res.status(201).json(userPlant);
+    const populated = await UserPlant.findById(doc._id)
+      .populate('plant', 'name slug images primaryImage soil tier light wateringFrequencyDays fertilizingFrequencyDays');
+
+    return res.status(201).json(populated);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('addUserPlant error:', err);
+    return res.status(500).json({ message: err.message });
   }
 };
 
