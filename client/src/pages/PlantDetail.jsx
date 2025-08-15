@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import useAuth from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
+import useWishlist from '../hooks/useWishlist';
 
 const PlantDetail = () => {
   const { id } = useParams();
@@ -22,6 +23,24 @@ const PlantDetail = () => {
   // Upload state
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+
+const { isWishlisted, add, remove, tokenPresent } = useWishlist();
+const wished = plant?._id ? isWishlisted(plant._id) : false;
+const onToggleWish = async () => {
+  if (!plant?._id) return;
+  if (!tokenPresent) { toast.error('Please log in to use your wishlist.'); return; }
+  try {
+    if (wished) { await remove(plant._id); toast('Removed from wishlist'); }
+    else {
+      const res = await add(plant);
+      if (res.already) toast('Already in wishlist');
+      else toast.success('Added to wishlist');
+    }
+  } catch {
+    toast.error('Could not update wishlist.');
+  }
+};
+
 
   // Load plant + approved community images
   const load = async () => {
@@ -108,6 +127,14 @@ const PlantDetail = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <h1 className="text-3xl font-bold text-green-900 mb-4">{plant.name}</h1>
+
+      <button
+        onClick={onToggleWish}
+        className={`ml-3 px-3 py-1 text-sm rounded border
+          ${wished ? 'bg-pink-100 border-pink-300 text-pink-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        {wished ? '♥ In wishlist' : '♡ Add to wishlist'}
+      </button>
 
       {plant.primaryImage?.url && (
         <img

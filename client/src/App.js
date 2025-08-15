@@ -19,6 +19,7 @@ import CareIndex from './pages/CareIndex';
 import BlogPost from './pages/BlogPost';
 import CarePost from './pages/CarePost';
 import AdminContentAssets from './pages/admin/AdminContentAssets';
+import MyWishlist from './pages/MyWishlist';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         {/* protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/my-plants" element={<MyPlants />} />
+          <Route path="/my-wishlist" element={<MyWishlist />} />
         </Route>
 
         {/* admin */}

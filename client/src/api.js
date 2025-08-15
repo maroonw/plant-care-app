@@ -14,3 +14,8 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+// --- Wishlist (Wanted) ---
+export const getWishlist = () => api.get('/wanted');
+export const addToWishlist = (plantId) => api.post(`/wanted/${plantId}`);
+export const removeFromWishlist = (plantId) => api.delete(`/wanted/${plantId}`);

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import useWishlist from '../hooks/useWishlist';
 
 const Header = () => {
   const { isAuthed, user, logout } = useAuth();
+  const { count } = useWishlist();
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -17,10 +19,22 @@ const Header = () => {
           <Link to="/plantgallery" className="hover:text-green-700">Plants</Link>
           <Link to="/care" className="hover:text-green-700">Care Guides</Link>
           <Link to="/blog" className="hover:text-green-700">Blog</Link>
-          <Link to="/community" className="hover:text-green-600 transition">Community</Link>
-          <Link to="/about" className="hover:text-green-600 transition">About</Link>
+          {/* <Link to="/community" className="hover:text-green-600 transition">Community</Link> */}
+          {/* <Link to="/about" className="hover:text-green-600 transition">About</Link> */}
           {isAuthed && (
-            <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link>
+            <>
+              <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link>
+              <Link to="/my-wishlist" className="hover:text-green-600 transition">Wishlist</Link>
+              <Link to="/my-wishlist" className="relative hover:text-green-700">
+                Wishlist
+                <span
+                  className="ml-2 inline-flex items-center justify-center text-xs rounded-full px-2 py-0.5 bg-green-600 text-white"
+                  aria-label={`Wishlist count: ${count}`}
+                >
+                  {count}
+                </span>
+              </Link>
+            </>
           )}
 
           {user?.role === 'admin' && (
