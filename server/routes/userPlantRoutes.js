@@ -1,46 +1,45 @@
+const express = require('express');
 const multer = require('multer');
+const router = express.Router();
+
 const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
-
-const express = require('express');
-const router = express.Router();
 
 const { protect } = require('../middleware/authMiddleware');
 const {
   addUserPlant,
   getUserPlants,
+  updateUserPlant,
+  deleteUserPlant,
   logPlantCare,
   uploadUserPlantImages,
   deleteUserPlantImage,
   setPrimaryUserPlantImage,
-  updateUserPlant,
 } = require('../controllers/userPlantController');
 
-// POST /api/userplants
-router.post('/', protect, addUserPlant);
-
-// GET /api/userplants
+// GET all for current user
 router.get('/', protect, getUserPlants);
 
-// PATCH /api/userplants/:id  (nickname/notes)
+// CREATE
+router.post('/', protect, addUserPlant);
+
+// UPDATE (nickname/notes/etc.)
 router.patch('/:id', protect, updateUserPlant);
 
-// PATCH /api/userplants/:id/care
-router.patch('/:id/care', protect, logPlantCare);
+// DELETE (remove from My Plants)
+router.delete('/:id', protect, deleteUserPlant);
 
-// POST /api/userplants/:id/upload
-router.post(
-  '/:id/upload',
-  protect,
-  upload.array('images', 5),
-  uploadUserPlantImages
-);
+// CARE LOG (optional endpoint if you want to log via this controller)
+// If you’re logging via /api/carelog controller, you can omit this.
+// router.post('/:id/log', protect, logPlantCare);
 
-// DELETE /api/userplants/:plantId/images/:imageId
+// Upload images for a user plant
+router.post('/:id/upload', protect, upload.array('images', 5), uploadUserPlantImages);
+
+// Delete a single image
 router.delete('/:plantId/images/:imageId', protect, deleteUserPlantImage);
 
-// PATCH /api/userplants/:plantId/images/:imageId/set-primary
+// Set primary image
 router.patch('/:plantId/images/:imageId/set-primary', protect, setPrimaryUserPlantImage);
 
-// ✅ export LAST
 module.exports = router;

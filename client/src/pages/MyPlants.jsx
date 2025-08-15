@@ -1,372 +1,422 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api';
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
+import { useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import useMyPlants from '../hooks/useMyPlants';
+import EditMyPlantModal from '../components/EditMyPlantModal';
+import { logCare, getCareLogs } from '../api';
 
-function fmt(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString();
+function parseDate(d) {
+  if (!d) return null;
+  const t = new Date(d);
+  return Number.isNaN(t.getTime()) ? null : t;
+}
+function daysUntil(date) {
+  if (!date) return Infinity;
+  const now = Date.now();
+  const diff = parseDate(date)?.getTime() - now;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+function fmtDays(n) {
+  if (!Number.isFinite(n)) return '—';
+  if (n <= 0) return 'Due now';
+  if (n === 1) return 'in 1 day';
+  return `in ${n} days`;
+}
+function chipColor(type) {
+  return type === 'water'
+    ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : 'bg-amber-50 text-amber-700 border-amber-200';
+}
+
+// Build upcoming task objects from a UserPlant
+// You can extend this with { type: 'repot', next: up.nextRepotDue } later.
+function nextTasks(up) {
+  const tasks = [];
+  // WATER
+  const nextWater = up.nextWateringDue || up.careSchedule?.nextWateringDue;
+  if (nextWater) {
+    tasks.push({ type: 'water', next: parseDate(nextWater), days: daysUntil(nextWater) });
+  }
+  // FERTILIZE
+  const nextFert = up.nextFertilizingDue || up.careSchedule?.nextFertilizingDue;
+  if (nextFert) {
+    tasks.push({ type: 'fertilize', next: parseDate(nextFert), days: daysUntil(nextFert) });
+  }
+  // Sort tasks by earliest date first
+  tasks.sort((a, b) => {
+    if (!a.next && !b.next) return 0;
+    if (!a.next) return 1;
+    if (!b.next) return -1;
+    return a.next - b.next;
+  });
+  return tasks;
 }
 
 export default function MyPlants() {
-  const { isAuthed } = useAuth();
-  const navigate = useNavigate();
+  const {
+    items, update, remove,
+    uploadImages, setPrimaryImage, deleteImage,
+    applyServerUserPlant,
+  } = useMyPlants();
 
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState('');
-
-  // edit nickname/notes
-  const [editId, setEditId] = useState(null);
-  const [editNickname, setEditNickname] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-
-  // photo manager
-  const [openManageId, setOpenManageId] = useState(null);
-  const [fileMap, setFileMap] = useState({});         // { [userPlantId]: FileList }
-  const [uploadingId, setUploadingId] = useState(null);
-
+  // UI state
+  const [editing, setEditing] = useState(null);
+  const [sortMode, setSortMode] = useState('next'); // 'next' | 'next-water' | 'next-fertilize' | 'name'
+  const [taskFilter, setTaskFilter] = useState('all'); // 'all' | 'water' | 'fertilize'
   const [dueOnly, setDueOnly] = useState(false);
-  const [dueDays, setDueDays] = useState(3);
+  const [dueDays, setDueDays] = useState(7);
+  const [history, setHistory] = useState({}); // { [userPlantId]: { loading, logs, open } }
 
-  const daysUntil = (dateStr) => {
-    if (!dateStr) return Infinity;
-    const now = new Date();
-    const d = new Date(dateStr);
-    // difference in days (ceil so today=0..1 shows as due)
-    return Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  };
+  const baseList = useMemo(() => items || [], [items]);
 
-  const isDueSoon = (up) => {
-    const w = daysUntil(up.nextWateringDue);
-    const f = daysUntil(up.nextFertilizingDue);
-    return (w <= dueDays) || (f <= dueDays);
-  };
+  // Decorate each UserPlant with computed tasks and helpers
+  const decorated = useMemo(() => {
+    return baseList.map((up) => {
+      const tasks = nextTasks(up);
+      const any = tasks[0] || null;
+      const water = tasks.find(t => t.type === 'water') || null;
+      const fert  = tasks.find(t => t.type === 'fertilize') || null;
+      return { up, tasks, any, water, fert };
+    });
+  }, [baseList]);
 
+  // Filter by task type and due window
+  const filtered = useMemo(() => {
+    const windowDays = Number(dueDays) || 7;
+    return decorated.filter(({ any, water, fert }) => {
+      // choose reference task based on taskFilter
+      const ref =
+        taskFilter === 'water' ? water :
+        taskFilter === 'fertilize' ? fert : any;
 
-  const refresh = async () => {
-    const res = await api.get('/userplants');
-    setItems(res.data || []);
-  };
+      if (!ref) return false; // if no matching task, hide when filtering by type
 
-  useEffect(() => {
-    if (!isAuthed) {
-      navigate('/login');
-      return;
+      if (!dueOnly) return true;
+      return ref.days <= windowDays;
+    });
+  }, [decorated, taskFilter, dueOnly, dueDays]);
+
+  // Sort by chosen mode
+  const list = useMemo(() => {
+    const arr = [...filtered];
+    switch (sortMode) {
+      case 'name':
+        arr.sort((a, b) => (a.up.plant?.name || '').localeCompare(b.up.plant?.name || ''));
+        break;
+      case 'next-water':
+        arr.sort((a, b) => {
+          const ad = a.water?.days ?? Infinity;
+          const bd = b.water?.days ?? Infinity;
+          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
+          return ad - bd;
+        });
+        break;
+      case 'next-fertilize':
+        arr.sort((a, b) => {
+          const ad = a.fert?.days ?? Infinity;
+          const bd = b.fert?.days ?? Infinity;
+          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
+          return ad - bd;
+        });
+        break;
+      case 'next':
+      default:
+        arr.sort((a, b) => {
+          const ad = a.any?.days ?? Infinity;
+          const bd = b.any?.days ?? Infinity;
+          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
+          return ad - bd;
+        });
+        break;
     }
-    (async () => {
-      try {
-        setLoading(true);
-        await refresh();
-      } catch (e) {
-        console.error(e);
-        setMsg('Could not load your plants.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [isAuthed, navigate]);
+    return arr;
+  }, [filtered, sortMode]);
 
-  const logCare = async (userPlantId, type) => {
+  // fetch history on demand
+  const loadHistory = async (userPlantId) => {
+    setHistory(h => ({ ...h, [userPlantId]: { ...(h[userPlantId] || {}), loading: true, open: true } }));
     try {
-      await api.patch(`/userplants/${userPlantId}/care`, { type });
-      await refresh();
-      toast.success(type === 'water' ? 'Watered!' : 'Fertilized!');
-    } catch (e) {
-      console.error(e);
-      toast.error('Failed to log care.');
+      const res = await getCareLogs(userPlantId);
+      const logs = Array.isArray(res.data) ? res.data : (res.data?.logs || []);
+      setHistory(h => ({ ...h, [userPlantId]: { loading: false, logs, open: true } }));
+    } catch {
+      setHistory(h => ({ ...h, [userPlantId]: { loading: false, logs: [], open: true } }));
+      toast.error('Could not load history');
     }
   };
-
-  // ----- Edit helpers -----
-  const startEdit = (item) => {
-    setEditId(item._id);
-    setEditNickname(item.nickname || '');
-    setEditNotes(item.notes || '');
-  };
-
-  const cancelEdit = () => {
-    setEditId(null);
-    setEditNickname('');
-    setEditNotes('');
-  };
-
-  const saveEdit = async () => {
-    try {
-      await api.patch(`/userplants/${editId}`, {
-        nickname: editNickname,
-        notes: editNotes,
-      });
-      await refresh();
-      cancelEdit();
-      toast.success('Plant updated!');
-    } catch (e) {
-      console.error(e);
-      toast.error('Update failed.');
-    }
-  };
-
-  // ----- Photo manager helpers -----
-  const onFileChange = (userPlantId, files) => {
-    setFileMap((prev) => ({ ...prev, [userPlantId]: files }));
-  };
-
-  const uploadPhotos = async (userPlantId) => {
-    const files = fileMap[userPlantId];
-    if (!files || files.length === 0) {
-      toast('Choose images first.');
-      return;
-    }
-    const form = new FormData();
-    Array.from(files).forEach((f) => form.append('images', f));
-    try {
-      setUploadingId(userPlantId);
-      await api.post(`/userplants/${userPlantId}/upload`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      await refresh();
-      setFileMap((prev) => ({ ...prev, [userPlantId]: null }));
-      toast.success('Images uploaded!');
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.message || 'Upload failed.');
-    } finally {
-      setUploadingId(null);
-    }
-  };
-
-  const setPrimary = async (userPlantId, imageId) => {
-    try {
-      await api.patch(`/userplants/${userPlantId}/images/${imageId}/set-primary`);
-      await refresh();
-      toast.success('Primary image set.');
-    } catch (e) {
-      console.error(e);
-      toast.error('Could not set primary.');
-    }
-  };
-
-  const deleteImage = async (userPlantId, imageId) => {
-    try {
-      await api.delete(`/userplants/${userPlantId}/images/${imageId}`);
-      await refresh();
-      toast.success('Image deleted.');
-    } catch (e) {
-      console.error(e);
-      toast.error('Delete failed.');
-    }
-  };
-
-  if (loading) return <div className="p-8 text-center text-green-800">Loading your plants…</div>;
-
-  const visibleItems = dueOnly ? items.filter(isDueSoon) : items;
 
   return (
-    <section className="py-10 px-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-green-900 mb-6">My Plants</h1>
+    <section className="py-10 px-4">
+      <div className="max-w-6xl mx-auto flex items-end justify-between flex-wrap gap-3">
+        <h1 className="text-3xl font-bold text-green-900">My Plants</h1>
 
-        <div className="mb-4 flex items-center gap-3">
+        <div className="flex items-center gap-3 text-sm">
+          <label className="flex items-center gap-2">
+            <span>Task</span>
+            <select
+              className="border rounded px-2 py-1"
+              value={taskFilter}
+              onChange={(e) => setTaskFilter(e.target.value)}
+            >
+              <option value="all">All</option>
+              <option value="water">Water</option>
+              <option value="fertilize">Fertilize</option>
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span>Sort</span>
+            <select
+              className="border rounded px-2 py-1"
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value)}
+            >
+              <option value="next">Next due (any)</option>
+              <option value="next-water">Next water</option>
+              <option value="next-fertilize">Next fertilize</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              className="accent-green-600"
               checked={dueOnly}
               onChange={(e) => setDueOnly(e.target.checked)}
-              className="h-4 w-4 accent-green-600"
             />
-            <span className="text-sm text-gray-700">Show only due soon</span>
+            <span>Due only</span>
           </label>
+
           <label className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">within</span>
+            <span>Days</span>
             <input
               type="number"
-              min={1}
-              max={30}
+              min="1"
+              className="w-16 border rounded px-2 py-1"
               value={dueDays}
-              onChange={(e) => setDueDays(Number(e.target.value || 1))}
-              className="w-16 border rounded px-2 py-1 text-sm"
+              onChange={(e) => setDueDays(e.target.value)}
+              disabled={!dueOnly}
             />
-            <span className="text-sm text-gray-700">days</span>
           </label>
         </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto mt-6">
+        {list.length === 0 ? (
+          <div className="text-center text-gray-600 py-10">
+            {baseList.length === 0
+              ? 'No plants yet. Tap “🌱 Add to My Plants” on any plant to get started.'
+              : 'No plants match your filters.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {list.map(({ up, tasks }) => {
+              const p = up.plant || {};
+              const primary =
+                up.primaryImage?.url ||
+                p.primaryImage?.url ||
+                p.images?.[0]?.url ||
+                '/images/placeholder.jpg';
 
-      {msg && <div className="mb-4 text-green-700">{msg}</div>}
+              const hp = history[up._id];
 
-      {items.length === 0 ? (
-        <div className="text-gray-600">You haven’t added any plants yet.</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleItems.map((up) => {
-            const img =
-              up.primaryImage?.url ||
-              up.images?.[0]?.url ||
-              up.plant?.primaryImage?.url ||
-              '/images/placeholder.jpg';
+              // Two chips max: next two upcoming tasks
+              const chips = tasks.slice(0, 2);
 
-            const managing = openManageId === up._id;
+              return (
+                <div key={up._id} className="bg-white rounded-xl shadow overflow-hidden">
+                  <img src={primary} alt={p.name} className="w-full h-48 object-cover" />
+                  <div className="p-4">
+                    <div className="font-semibold text-green-900">{p.name}</div>
 
-
-            return (
-              <div key={up._id} className="bg-white rounded-xl shadow overflow-hidden">
-                <img src={img} alt={up.nickname || up.plant?.name} className="w-full h-48 object-cover" />
-
-                <div className="p-4">
-                  {/* Edit/view nickname + notes */}
-                  {editId === up._id ? (
-                    <div className="mt-1">
-                      <input
-                        className="border rounded w-full mb-2 px-2 py-2"
-                        value={editNickname}
-                        onChange={(e) => setEditNickname(e.target.value)}
-                        placeholder="Nickname (e.g., Kitchen Aloe)"
-                      />
-                      <textarea
-                        className="border rounded w-full mb-2 px-2 py-2"
-                        rows={3}
-                        value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
-                        placeholder="Notes (location, issues, reminders...)"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={saveEdit}
-                          className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                    {/* Upcoming task chips */}
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {chips.length ? chips.map(t => (
+                        <span
+                          key={t.type}
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${chipColor(t.type)}`}
+                          title={t.next ? t.next.toLocaleString() : 'No date'}
                         >
-                          Save
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 transition"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                          {t.type === 'water' ? '💧 Water' : '🌿 Fertilize'} {fmtDays(t.days)}
+                        </span>
+                      )) : (
+                        <span className="inline-block rounded-full bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 text-xs">
+                          No schedule available
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      {(up.nickname || up.notes) ? (
-                        <div className="mt-1">
-                          {up.nickname && (
-                            <h3 className="font-semibold text-green-900">{up.nickname}</h3>
-                          )}
-                          {up.notes && (
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{up.notes}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-500">No nickname or notes yet.</p>
-                      )}
+
+                    {/* Nickname / notes */}
+                    {up.nickname ? (
+                      <div className="text-sm text-gray-700 mt-2">Nickname: {up.nickname}</div>
+                    ) : (
+                      <div className="text-sm text-gray-400 mt-2 italic">No nickname</div>
+                    )}
+                    {up.notes ? (
+                      <div className="text-sm text-gray-600 mt-1 line-clamp-3">{up.notes}</div>
+                    ) : (
+                      <div className="text-sm text-gray-400 mt-1 italic">No notes</div>
+                    )}
+
+                    {/* Care quick actions */}
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
-                        onClick={() => startEdit(up)}
-                        className="mt-2 text-green-700 text-sm hover:underline"
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={async () => {
+                          try {
+                            const res = await logCare({ userPlantId: up._id, type: 'water', date: new Date().toISOString() });
+                            if (res?.data?.userPlant) applyServerUserPlant(res.data.userPlant);
+                            toast.success('Logged watering');
+                          } catch {
+                            toast.error('Could not log watering');
+                          }
+                        }}
                       >
-                        Edit nickname/notes
+                        Log Watered 💧
                       </button>
-                    </>
-                  )}
 
-                  {/* Always show plant name */}
-                  {up.plant?.name && (
-                    <p className="text-sm text-gray-600 italic mt-1">{up.plant.name}</p>
-                  )}
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={async () => {
+                          try {
+                            const res = await logCare({ userPlantId: up._id, type: 'fertilize', date: new Date().toISOString() });
+                            if (res?.data?.userPlant) applyServerUserPlant(res.data.userPlant);
+                            toast.success('Logged fertilizing');
+                          } catch {
+                            toast.error('Could not log fertilizing');
+                          }
+                        }}
+                      >
+                        Log Fertilized 🌿
+                      </button>
 
-                  {/* Care info + actions */}
-                  <div className="mt-3 text-sm text-gray-800 space-y-1">
-                    <div><strong>Last watered:</strong> {fmt(up.lastWatered)}</div>
-                    <div><strong>Next watering due:</strong> {fmt(up.nextWateringDue)}</div>
-                    <div><strong>Last fertilized:</strong> {fmt(up.lastFertilized)}</div>
-                    <div><strong>Next fertilizing due:</strong> {fmt(up.nextFertilizingDue)}</div>
-                  </div>
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={async () => {
+                          if (!hp?.logs && !hp?.loading) await loadHistory(up._id);
+                          else setHistory(h => ({ ...h, [up._id]: { ...(h[up._id] || {}), open: !(h[up._id]?.open) } }));
+                          setHistory(h => ({ ...h, [up._id]: { ...(h[up._id] || {}), open: true } }));
+                        }}
+                      >
+                        {hp?.open ? 'Hide History' : 'Show History'}
+                      </button>
+                    </div>
 
-                  <div className="mt-4 flex gap-3">
-                    <button
-                      onClick={() => logCare(up._id, 'water')}
-                      className="flex-1 bg-green-700 text-white py-2 rounded hover:bg-green-800 transition"
-                    >
-                      Log Water
-                    </button>
-                    <button
-                      onClick={() => logCare(up._id, 'fertilize')}
-                      className="flex-1 bg-emerald-600 text-white py-2 rounded hover:bg-emerald-700 transition"
-                    >
-                      Log Fertilizer
-                    </button>
-                  </div>
+                    {/* Edit / remove / images */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={() => setEditing(up)}
+                      >
+                        Edit
+                      </button>
 
-                  {/* Photo manager toggle */}
-                  <div className="mt-4">
-                    <button
-                      onClick={() => setOpenManageId(managing ? null : up._id)}
-                      className="text-sm text-green-700 hover:underline"
-                    >
-                      {managing ? 'Hide photos' : 'Manage photos'}
-                    </button>
-                  </div>
+                      <button
+                        className="px-3 py-1 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={async () => {
+                          if (!window.confirm('Remove this plant from My Plants?')) return;
+                          try { await remove(up._id); toast('Removed'); }
+                          catch { toast.error('Could not remove'); }
+                        }}
+                      >
+                        Remove
+                      </button>
 
-                  {/* Photo manager panel */}
-                  {managing && (
-                    <div className="mt-3 border-t pt-3">
-                      {/* Thumbnails */}
-                      {up.images?.length > 0 ? (
-                        <div className="grid grid-cols-4 gap-2 mb-3">
-                          {up.images.map((im) => (
-                            <div key={im._id} className="relative group">
-                              <img
-                                src={im.url}
-                                alt="plant"
-                                className="w-full h-20 object-cover rounded"
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                                <button
-                                  onClick={() => setPrimary(up._id, im._id)}
-                                  title="Set as primary"
-                                  className="text-white text-xs bg-green-600 px-2 py-1 rounded"
-                                >
-                                  Primary
-                                </button>
-                                <button
-                                  onClick={() => deleteImage(up._id, im._id)}
-                                  title="Delete"
-                                  className="text-white text-xs bg-red-600 px-2 py-1 rounded"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 mb-2">No photos yet.</p>
-                      )}
-
-                      {/* Upload */}
-                      <div className="flex items-center gap-2">
+                      <label className="px-3 py-1 text-sm rounded border hover:bg-gray-50 cursor-pointer">
+                        Upload Images
                         <input
                           type="file"
+                          className="hidden"
                           multiple
                           accept="image/*"
-                          onChange={(e) => onFileChange(up._id, e.target.files)}
-                          className="text-sm"
+                          onChange={async (e) => {
+                            const files = e.target.files;
+                            if (!files?.length) return;
+                            try { await uploadImages(up._id, files); toast.success('Uploaded'); }
+                            catch { toast.error('Upload failed'); }
+                            finally { e.target.value = ''; }
+                          }}
                         />
-                        <button
-                          onClick={() => uploadPhotos(up._id)}
-                          disabled={uploadingId === up._id}
-                          className="bg-green-700 text-white px-3 py-2 rounded text-sm hover:bg-green-800 transition"
-                        >
-                          {uploadingId === up._id ? 'Uploading…' : 'Upload'}
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">You can upload up to 5 images per request.</p>
+                      </label>
                     </div>
-                  )}
+
+                    {/* Thumbnails */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(up.images || []).map((img) => (
+                        <div key={img._id} className="relative">
+                          <img
+                            src={img.url}
+                            alt=""
+                            className={`w-16 h-16 object-cover rounded ${
+                              up.primaryImage?.url === img.url ? 'ring-2 ring-green-500' : ''
+                            }`}
+                          />
+                          <div className="flex gap-1 mt-1">
+                            <button
+                              className="text-xs px-2 py-0.5 rounded border hover:bg-gray-50"
+                              onClick={async () => {
+                                try { await setPrimaryImage(up._id, img._id); toast('Primary set'); }
+                                catch { toast.error('Failed'); }
+                              }}
+                            >
+                              Primary
+                            </button>
+                            <button
+                              className="text-xs px-2 py-0.5 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                              onClick={async () => {
+                                try { await deleteImage(up._id, img._id); toast('Deleted'); }
+                                catch { toast.error('Delete failed'); }
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* History panel */}
+                    {hp?.open && (
+                      <div className="mt-3 border-t pt-2">
+                        {hp.loading ? (
+                          <div className="text-xs text-gray-500">Loading history…</div>
+                        ) : (hp.logs?.length ? (
+                          <ul className="text-xs text-gray-700 space-y-1 max-h-32 overflow-auto pr-1">
+                            {hp.logs.slice(0, 10).map(log => (
+                              <li key={log._id}>
+                                <span className="inline-block w-20 capitalize">{log.type}:</span>
+                                <span>{new Date(log.timestamp).toLocaleString()}</span>
+                                {log.note ? <span className="text-gray-500"> — {log.note}</span> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-xs text-gray-500">No history yet.</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <EditMyPlantModal
+          userPlant={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (patch) => {
+            try {
+              await update(editing._id, patch);
+              toast.success('Saved');
+              setEditing(null);
+            } catch {
+              toast.error('Save failed');
+            }
+          }}
+        />
       )}
     </section>
   );

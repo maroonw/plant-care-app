@@ -25,16 +25,46 @@ exports.addUserPlant = async (req, res) => {
   }
 };
 
+// @route   DELETE /api/userplants/:id
+// @desc    Remove a plant from the user's owned list
+// @access  Private
+exports.deleteUserPlant = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Only delete documents owned by this user
+    const doc = await UserPlant.findOne({ _id: id, user: req.user._id });
+    if (!doc) return res.status(404).json({ message: 'UserPlant not found' });
+
+    // Optional: clean up Cloudinary images for this user plant
+    if (doc.images && doc.images.length) {
+      const deletions = doc.images
+        .map(img => img.public_id)
+        .filter(Boolean)
+        .map(public_id => cloudinary.uploader.destroy(public_id).catch(() => null));
+      await Promise.all(deletions);
+    }
+
+    await doc.deleteOne();
+
+    // Return the updated list so the client reconciles immediately
+    const list = await UserPlant.find({ user: req.user._id })
+      .populate('plant', 'name slug images primaryImage soil tier light');
+    return res.json(list);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 // @route   GET /api/userplants
 // @desc    Get all plants the user owns
 // @access  Private
 exports.getUserPlants = async (req, res) => {
   try {
-    const userPlants = await UserPlant.find({ user: req.user._id }).populate('plant');
-    res.status(200).json(userPlants);
+    const list = await UserPlant.find({ user: req.user._id })
+      .populate('plant', 'name slug images primaryImage soil tier light');
+    return res.json(list);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 

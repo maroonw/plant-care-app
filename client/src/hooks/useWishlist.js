@@ -36,40 +36,29 @@ export default function useWishlist() {
     const plant = typeof plantOrId === 'object' ? plantOrId : null;
     const plantId = plant ? plant._id : plantOrId;
 
-    // optimistic add
-    if (plant && !idSet.has(plantId)) {
-      setItems(prev => [{ ...plant }, ...prev]);
-    }
-
-    try {
-      const res = await addToWishlist(plantId);
-      // server returns authoritative list
-      const data = Array.isArray(res.data) ? res.data : [];
-      setItems(data);
-      return { ok: true };
-    } catch (err) {
-      // rollback if optimistic add failed
-      if (plant) setItems(prev => prev.filter(p => p._id !== plantId));
-      throw err;
-    }
+    // optimistic add immediately
+    if (plant && !idSet.has(plantId)) setItems(prev => [{ ...plant }, ...prev]);
+    else if (!plant && !idSet.has(plantId)) setItems(prev => [{ _id: plantId }, ...prev]);
+    // fire-and-forget; reconcile when response arrives
+    addToWishlist(plantId)
+      .then(res => Array.isArray(res.data) && setItems(res.data))
+      .catch(() => {
+        // rollback only if we added optimistically and server failed
+        setItems(prev => prev.filter(p => p._id !== plantId));
+      });
+    return { ok: true };
   }, [token, idSet]);
 
   const remove = useCallback(async (plantId) => {
     if (!token) return { ok: false, reason: 'auth' };
-    // optimistic remove
-    const prev = items;
-    setItems(prev.filter(p => p._id !== plantId));
-    try {
-      const res = await removeFromWishlist(plantId);
-      const data = Array.isArray(res.data) ? res.data : [];
-      setItems(data);
-      return { ok: true };
-    } catch (err) {
-      // rollback on failure
-      setItems(prev);
-      throw err;
-    }
-  }, [token, items]);
+    // optimistic remove immediately
+    setItems(prev => prev.filter(p => p._id !== plantId));
+    // fire-and-forget; reconcile when response arrives
+    removeFromWishlist(plantId)
+      .then(res => Array.isArray(res.data) && setItems(res.data))
+        .catch(() => refresh());
+    return { ok: true };
+  }, [token, items, refresh]);
 
   return { items, isWishlisted, add, remove, tokenPresent: !!token, refresh, count: items.length };
 }

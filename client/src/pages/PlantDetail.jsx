@@ -1,6 +1,6 @@
 // client/src/pages/PlantDetail.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../api';
 import useAuth from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
@@ -11,7 +11,6 @@ import useMyPlants from '../hooks/useMyPlants';
 
 const PlantDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { isAuthed } = useAuth();
 
   const [plant, setPlant] = useState(null);
@@ -20,9 +19,6 @@ const PlantDetail = () => {
   const { isInMyPlants } = useMyPlants();
   const owned = plant?._id ? isInMyPlants(plant._id) : false;
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // Add-to-my-plants
-  const [adding, setAdding] = useState(false);
 
   // Community images (approved only)
   const [community, setCommunity] = useState([]);

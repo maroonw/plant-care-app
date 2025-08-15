@@ -24,7 +24,7 @@ const Header = () => {
           {isAuthed && (
             <>
               <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link>
-              <Link to="/my-wishlist" className="hover:text-green-600 transition">Wishlist</Link>
+              
               <Link to="/my-wishlist" className="relative hover:text-green-700">
                 Wishlist
                 <span
