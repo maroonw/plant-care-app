@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useWishlist from '../hooks/useWishlist';
+import useMyPlants from '../hooks/useMyPlants';
 
 const Header = () => {
   const { isAuthed, user, logout } = useAuth();
-  const { count } = useWishlist();
+  const { count: wishlistCount } = useWishlist();
+  const { count: myPlantsCount } = useMyPlants();
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -23,15 +25,19 @@ const Header = () => {
           {/* <Link to="/about" className="hover:text-green-600 transition">About</Link> */}
           {isAuthed && (
             <>
-              <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link>
-              
-              <Link to="/my-wishlist" className="relative hover:text-green-700">
+              {/* <Link to="/my-plants" className="hover:text-green-600 transition">My Plants</Link> */}
+
+              <Link to="/my-plants" className="relative px-3 py-2 hover:opacity-90">
+                My Plants
+                <span className="ml-1 inline-flex items-center justify-center min-w-5 h-5 text-[11px] px-1 rounded-full bg-green-600 text-white">
+                  {myPlantsCount}
+                </span>
+              </Link>
+
+              <Link to="/my-wishlist" className="relative px-3 py-2 hover:opacity-90">
                 Wishlist
-                <span
-                  className="ml-2 inline-flex items-center justify-center text-xs rounded-full px-2 py-0.5 bg-green-600 text-white"
-                  aria-label={`Wishlist count: ${count}`}
-                >
-                  {count}
+                <span className="ml-1 inline-flex items-center justify-center min-w-5 h-5 text-[11px] px-1 rounded-full bg-pink-600 text-white">
+                  {wishlistCount}
                 </span>
               </Link>
             </>

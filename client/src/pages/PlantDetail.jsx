@@ -7,16 +7,16 @@ import { toast } from 'react-hot-toast';
 import useWishlist from '../hooks/useWishlist';
 import AddToMyPlantsModal from '../components/AddToMyPlantsModal';
 import useMyPlants from '../hooks/useMyPlants';
+import { Skeleton } from '../components/Skeletons';
 
-
-const PlantDetail = () => {
-  const { id } = useParams();
+export default function PlantDetail() {
+  const { id } = useParams(); // slug or ObjectId
   const { isAuthed } = useAuth();
 
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const { isInMyPlants } = useMyPlants();
+  const { isInMyPlants, add: addMyPlant } = useMyPlants();
   const owned = plant?._id ? isInMyPlants(plant._id) : false;
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -27,23 +27,25 @@ const PlantDetail = () => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-const { isWishlisted, add, remove, tokenPresent } = useWishlist();
-const wished = plant?._id ? isWishlisted(plant._id) : false;
-const onToggleWish = async () => {
-  if (!plant?._id) return;
-  if (!tokenPresent) { toast.error('Please log in to use your wishlist.'); return; }
-  try {
-    if (wished) { await remove(plant._id); toast('Removed from wishlist'); }
-    else {
-      const res = await add(plant);
-      if (res.already) toast('Already in wishlist');
-      else toast.success('Added to wishlist');
-    }
-  } catch {
-    toast.error('Could not update wishlist.');
-  }
-};
+  // Wishlist
+  const { isWishlisted, add: addWish, remove: removeWish, tokenPresent } = useWishlist();
+  const wished = plant?._id ? isWishlisted(plant._id) : false;
 
+  const onToggleWish = async () => {
+    if (!plant?._id) return;
+    if (!tokenPresent) { toast.error('Please log in to use your wishlist.'); return; }
+    try {
+      if (wished) {
+        removeWish(plant._id); // optimistic
+        toast('Removed from wishlist');
+      } else {
+        addWish(plant); // optimistic
+        toast.success('Added to wishlist');
+      }
+    } catch {
+      toast.error('Could not update wishlist.');
+    }
+  };
 
   // Load plant + approved community images
   const load = async () => {
@@ -51,7 +53,7 @@ const onToggleWish = async () => {
       setLoading(true);
       const [pRes, cRes] = await Promise.all([
         api.get(`/plants/${id}`),
-        api.get(`/plants/${id}/community`) // returns only approved
+        api.get(`/plants/${id}/community`),
       ]);
       setPlant(pRes.data);
       setCommunity(cRes.data?.images || []);
@@ -68,20 +70,20 @@ const onToggleWish = async () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Related content (blog/care) by slug
   const [related, setRelated] = useState({ blog: [], care: [] });
-
-    useEffect(() => {
-      const loadRelated = async () => {
-        try {
-          if (!plant?.slug) return;
-          const r = await api.get(`/content/related?plantSlug=${plant.slug}`);
-          setRelated(r.data || { blog: [], care: [] });
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      loadRelated();
-    }, [plant?.slug]);
+  useEffect(() => {
+    const loadRelated = async () => {
+      try {
+        if (!plant?.slug) return;
+        const r = await api.get(`/content/related?plantSlug=${plant.slug}`);
+        setRelated(r.data || { blog: [], care: [] });
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadRelated();
+  }, [plant?.slug]);
 
   const submitCommunity = async (e) => {
     e.preventDefault();
@@ -93,11 +95,11 @@ const onToggleWish = async () => {
       const fd = new FormData();
       for (const f of files) fd.append('images', f); // field name must be "images"
       await api.post(`/plants/${id}/community`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success('Submitted for moderation!');
       setFiles([]);
-      // Note: Approved list won’t change until admin approves; no need to reload now.
+      // Approved list updates when admin approves; no reload necessary here.
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message || 'Upload failed.');
@@ -106,41 +108,86 @@ const onToggleWish = async () => {
     }
   };
 
-  if (loading) return <div className="text-center mt-20 text-green-800">Loading...</div>;
-  if (!plant) return <div className="text-center mt-20">Plant not found.</div>;
+  // Skeleton while loading
+  if (loading) {
+    return (
+      <section className="py-10 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8">
+            <Skeleton className="w-full h-80 rounded-xl" />
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!plant) {
+    return <div className="text-center mt-20">Plant not found.</div>;
+  }
+
+  const primaryImg =
+    plant.primaryImage?.url ||
+    plant.images?.[0]?.url ||
+    '/images/placeholder.jpg';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold text-green-900 mb-4">{plant.name}</h1>
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold text-green-900 mb-4">{plant.name}</h1>
 
-      <button
-        onClick={onToggleWish}
-        className={`ml-3 px-3 py-1 text-sm rounded border
-          ${wished ? 'bg-pink-100 border-pink-300 text-pink-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-      >
-        {wished ? '♥ In wishlist' : '♡ Add to wishlist'}
-      </button>
+        <div className="shrink-0 flex gap-2">
+          <button
+            onClick={onToggleWish}
+            className={`px-3 py-1 text-sm rounded border
+              ${wished ? 'bg-pink-100 border-pink-300 text-pink-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            aria-pressed={wished}
+            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            {wished ? '♥ In wishlist' : '♡ Add to wishlist'}
+          </button>
 
-      <button
-        onClick={() => setShowAddModal(true)}
-        className={`ml-3 px-3 py-1 text-sm rounded border ${owned ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-      >
-        {owned ? '✓ In My Plants' : '🌱 Add to My Plants'}
-      </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className={`px-3 py-1 text-sm rounded border ${owned ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+          >
+            {owned ? '✓ In My Plants' : '🌱 Add to My Plants'}
+          </button>
+        </div>
+      </div>
 
-      {plant.primaryImage?.url && (
+      {/* Hero image */}
+      {primaryImg && (
         <img
-          src={plant.primaryImage.url}
+          src={primaryImg}
           alt={plant.name}
           className="w-full h-auto mb-6 rounded-lg shadow-md"
         />
       )}
 
+      {/* Add to My Plants modal (optimistic) */}
       {showAddModal && plant && (
-        <AddToMyPlantsModal plant={plant} onClose={() => setShowAddModal(false)} />
+        <AddToMyPlantsModal
+          plant={plant}
+          onClose={() => setShowAddModal(false)}
+          onAdd={async ({ nickname, notes }) => {
+            try {
+              await addMyPlant(plant, { nickname, notes }); // optimistic via hook
+              toast.success('Added to My Plants');
+            } catch {
+              toast.error('Could not add plant');
+            }
+          }}
+        />
       )}
 
       <p className="text-lg text-gray-700 mb-4 italic">{plant.scientificName}</p>
+
       <ul className="list-disc pl-5 text-gray-800 mb-6">
         <li><strong>Tier:</strong> {plant.tier}</li>
         <li><strong>Water every:</strong> {plant.wateringFrequencyDays} days</li>
@@ -150,8 +197,7 @@ const onToggleWish = async () => {
         <li><strong>Pet Friendly:</strong> {plant.petFriendly ? 'Yes' : 'No'}</li>
       </ul>
 
-
-      {/* Community upload (only visible if logged in) */}
+      {/* Community upload (only if logged in) */}
       {isAuthed && (
         <div className="mt-10 bg-white rounded-xl shadow p-4">
           <h3 className="text-xl font-semibold text-green-900 mb-3">Share your photo</h3>
@@ -210,7 +256,6 @@ const onToggleWish = async () => {
         </div>
       ) : null}
 
-
       {/* Approved community images */}
       {community.length > 0 && (
         <div className="mt-10">
@@ -235,6 +280,4 @@ const onToggleWish = async () => {
       )}
     </div>
   );
-};
-
-export default PlantDetail;
+}

@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { toast } from 'react-hot-toast';
-import useMyPlants from '../hooks/useMyPlants';
+import ModalBase from './ModalBase';
 
 export default function AddToMyPlantsModal({ plant, onAdd, onClose }) {
   const [nickname, setNickname] = useState('');
@@ -15,69 +13,50 @@ export default function AddToMyPlantsModal({ plant, onAdd, onClose }) {
     try {
       await onAdd({ nickname, notes }); // parent wires this to useMyPlants.add(plant, { ... })
       onClose();
-    } catch {
-      // toast is handled by parent/hook if you want
     } finally {
       setSaving(false);
     }
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div
-        className="bg-white w-full max-w-md rounded-2xl shadow-xl p-6"
-        onClick={(e) => e.stopPropagation()} // don't close when clicking inside
-      >
-        <h2 className="text-lg font-semibold text-green-800 mb-2">Add to My Plants</h2>
-        <p className="text-sm text-gray-600 mb-4">{plant?.name}</p>
+  return (
+    <ModalBase onClose={onClose}>
+      <h2 className="text-lg font-semibold text-green-800 mb-2">Add to My Plants</h2>
+      <p className="text-sm text-gray-600 mb-4">{plant?.name}</p>
 
-        {/* Optional: show the recommended schedule coming from the Plant */}
-        <div className="text-xs text-gray-600 mb-4 space-y-1">
-          <div>Recommended watering every <strong>{plant?.wateringFrequencyDays ?? 7}</strong> days</div>
-          <div>Recommended fertilizing every <strong>{plant?.fertilizingFrequencyDays ?? 30}</strong> days</div>
-          <div className="text-gray-500">You can edit these later in “Edit Schedule”.</div>
+      <div className="text-xs text-gray-600 mb-4 space-y-1">
+        <div>Recommended watering every <strong>{plant?.wateringFrequencyDays ?? 7}</strong> days</div>
+        <div>Recommended fertilizing every <strong>{plant?.fertilizingFrequencyDays ?? 30}</strong> days</div>
+        <div className="text-gray-500">You can edit these later in “Edit Schedule”.</div>
+      </div>
+
+      <form onSubmit={submit} className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">Nickname (optional)</label>
+          <input
+            className="w-full border rounded px-3 py-2"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="e.g., Monty"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+          <textarea
+            className="w-full border rounded px-3 py-2"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Where it lives, light, quirks…"
+          />
         </div>
 
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nickname (optional)</label>
-            <input
-              className="w-full border rounded px-3 py-2"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="e.g., Monty"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Notes (optional)</label>
-            <textarea
-              className="w-full border rounded px-3 py-2"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Where it lives, light, quirks…"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              className="px-4 py-2 rounded-lg border"
-              onClick={(e) => { e.preventDefault(); onClose(); }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-            >
-              {saving ? 'Adding…' : 'Add plant'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    document.body
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" className="px-4 py-2 rounded-lg border" onClick={onClose}>Cancel</button>
+          <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-60">
+            {saving ? 'Adding…' : 'Add plant'}
+          </button>
+        </div>
+      </form>
+    </ModalBase>
   );
 }

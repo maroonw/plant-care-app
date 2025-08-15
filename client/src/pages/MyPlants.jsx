@@ -3,8 +3,10 @@ import { toast } from 'react-hot-toast';
 import useMyPlants from '../hooks/useMyPlants';
 import EditMyPlantModal from '../components/EditMyPlantModal';
 import { logCare, getCareLogs } from '../api';
+import ConfirmModal from '../components/ConfirmModal';
 import EditCareScheduleModal from '../components/EditCareScheduleModal';
 import { updateMyPlantSchedule } from '../api';
+
 
 function parseDate(d) {
   if (!d) return null;
@@ -84,8 +86,38 @@ export default function MyPlants() {
   const [overdueFirst, setOverdueFirst] = useState(true);
   const [dueDays, setDueDays] = useState(7);
   const [history, setHistory] = useState({}); // { [userPlantId]: { loading, logs, open } }
+  const [confirmBulk, setConfirmBulk] = useState(null); // { type: 'water'|'fertilize', ids: [] }
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const baseList = useMemo(() => items || [], [items]);
+
+function dueTodayIds(list, type) {
+  return list
+    .map(({ up, tasks }) => {
+      const t = tasks.find(x => x.type === type);
+      return t && t.days <= 0 ? up._id : null;
+    })
+    .filter(Boolean);
+}
+
+async function runBulk(type) {
+  const ids = dueTodayIds(list, type);
+  if (!ids.length) return;
+  setBulkBusy(true);
+  try {
+    // Fire requests in parallel; we already update UI per-response via applyServerUserPlant in single-log buttons,
+    // but for bulk we’ll refetch after to be safe OR optimistically adjust by ignoring since server returns populated doc.
+    const results = await Promise.allSettled(
+      ids.map(id => logCare({ userPlantId: id, type, date: new Date().toISOString() }))
+    );
+    // If your logCare returns updated userPlant as earlier, you could:
+    // results.forEach(r => r.status==='fulfilled' && r.value?.data?.userPlant && applyServerUserPlant(r.value.data.userPlant));
+    // Optional: toast summary
+  } finally {
+    setBulkBusy(false);
+    setConfirmBulk(null);
+  }
+ }
 
   // Decorate each UserPlant with computed tasks and helpers
   const decorated = useMemo(() => {
@@ -265,6 +297,24 @@ export default function MyPlants() {
               disabled={!dueOnly}
             />
           </label>
+
+          <button
+            className="px-3 py-1.5 rounded border hover:bg-gray-50 disabled:opacity-60"
+            disabled={bulkBusy || dueTodayIds(list, 'water').length === 0}
+            onClick={() => setConfirmBulk({ type: 'water', ids: dueTodayIds(list, 'water') })}
+            title="Log watering for all plants due today"
+          >
+            Water all due today
+          </button>
+          <button
+            className="px-3 py-1.5 rounded border hover:bg-gray-50 disabled:opacity-60"
+            disabled={bulkBusy || dueTodayIds(list, 'fertilize').length === 0}
+            onClick={() => setConfirmBulk({ type: 'fertilize', ids: dueTodayIds(list, 'fertilize') })}
+            title="Log fertilizing for all plants due today"
+          >
+            Fertilize all due today
+          </button>
+
         </div>
       </div>
 
@@ -307,7 +357,8 @@ export default function MyPlants() {
                           {t.type === 'water' ? '💧 Water'
                           : t.type === 'fertilize' ? '🌿 Fertilize'
                           : t.type === 'repot' ? '🪴 Repot'
-                          : '🔄 Rotate'} {fmtDays(t.days)}
+                          : '🔄 Rotate'}
+                          <span className="ml-1">{fmtDays(t.days)}</span>
                         </span>
                       )) : (
                         <span className="inline-block rounded-full bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 text-xs">
@@ -540,6 +591,16 @@ export default function MyPlants() {
               toast.error('Could not save schedule');
             }
           }}
+        />
+      )}
+
+      {confirmBulk && (
+        <ConfirmModal
+          title={confirmBulk.type === 'water' ? 'Water all due today?' : 'Fertilize all due today?'}
+          message={`This will log ${confirmBulk.type} for ${confirmBulk.ids.length} plant(s).`}
+          confirmText="Do it"
+          onClose={() => setConfirmBulk(null)}
+          onConfirm={() => runBulk(confirmBulk.type)}
         />
       )}
 

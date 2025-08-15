@@ -121,6 +121,6 @@ export default function useMyPlants() {
 
   return {
     items, refresh, isInMyPlants, add, update, remove,
-    uploadImages, setPrimaryImage, deleteImage, applyServerUserPlant,
+    uploadImages, setPrimaryImage, deleteImage, applyServerUserPlant, count: (items?.length || 0)
   };
-}
+};

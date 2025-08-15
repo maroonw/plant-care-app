@@ -3,6 +3,7 @@ import api from '../api';
 import PlantCard from '../components/PlantCard';
 
 import { TIERS, LIGHTS, SOILS } from '../constants/plantEnums'; // adjust relative path if needed
+import { SkeletonCard } from '../components/Skeletons';
 const WATERING_OPTIONS = ['weekly', 'biweekly', 'monthly'];
 
 const SOIL_LABELS = {
@@ -70,12 +71,18 @@ const PlantGallery = () => {
     return () => { cancelled = true; };
   }, [queryString]);
 
-  if (loading) return <div className="p-8 text-center text-green-800">Loading plants…</div>;
-  if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   return (
     <section className="py-10 px-4">
       <h1 className="text-4xl font-bold text-center text-green-900 mb-8">Our Plants</h1>
+
+        {error && (
+          <div className="max-w-6xl mx-auto mb-4">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3">
+              {error}
+            </div>
+          </div>
+        )}
 
       {/* Filters */}
       <div className="max-w-6xl mx-auto mb-8 bg-white rounded-xl shadow p-4 md:p-6">
@@ -146,7 +153,13 @@ const PlantGallery = () => {
 
       {/* Results */}
       <div className="max-w-6xl mx-auto">
-        {plants.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : plants.length === 0 ? (
           <div className="text-center text-gray-600 py-10">No plants match your filters.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
