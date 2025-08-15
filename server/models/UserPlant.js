@@ -17,13 +17,24 @@ const userPlantSchema = new mongoose.Schema({
   },
 
   careSchedule: {
-    wateringFrequencyDays: { type: Number, default: 7 }, // how often to water
-    fertilizingFrequencyDays: { type: Number, default: 30 } // how often to fertilize
+    wateringFrequencyDays: { type: Number, default: 7 },      // recommendation; user may override
+    fertilizingFrequencyDays: { type: Number, default: 30 },
+    repotIntervalMonths: { type: Number, default: 18 },
+    rotateIntervalDays: { type: Number, default: 14 },
+    isCustom: { type: Boolean, default: false },
   },
-  lastWatered: { type: Date, default: null },
-  lastFertilized: { type: Date, default: null },
-  nextWateringDue: { type: Date, default: null },
-  nextFertilizingDue: { type: Date, default: null },
+
+  lastWatered: Date,
+  nextWateringDue: Date,
+
+  lastFertilized: Date,
+  nextFertilizingDue: Date,
+
+  lastRepotted: Date,
+  nextRepotDue: Date,
+
+  lastRotated: Date,
+  nextRotateDue: Date,
   addedAt: { type: Date, default: Date.now }
 });
 

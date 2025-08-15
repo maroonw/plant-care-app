@@ -8,6 +8,16 @@ const { cloudinary } = require('../utils/cloudinary');
 exports.addUserPlant = async (req, res) => {
   const { plantId, nickname, notes, images } = req.body;
 
+  const now = new Date();
+  const cs = {
+    // you can pull from Plant defaults if you have them; otherwise keep these
+    wateringFrequencyDays: 7,
+    fertilizingFrequencyDays: 30,
+    repotIntervalMonths: 18,
+    rotateIntervalDays: 14,
+    isCustom: false,
+  };
+
   try {
     // ✅ No "exists" check—allow multiple instances of same plant
     const userPlant = new UserPlant({
@@ -15,6 +25,11 @@ exports.addUserPlant = async (req, res) => {
       plant: plantId,
       nickname: nickname || '',
       notes: notes || '',
+      careSchedule: cs,
+      nextWateringDue: new Date(now.getTime() + cs.wateringFrequencyDays * 86400000),
+      nextFertilizingDue: new Date(now.getTime() + cs.fertilizingFrequencyDays * 86400000),
+      nextRepotDue: new Date(new Date(now).setMonth(now.getMonth() + cs.repotIntervalMonths)),
+      nextRotateDue: new Date(now.getTime() + cs.rotateIntervalDays * 86400000),
       images: images || []
     });
 
@@ -110,6 +125,53 @@ exports.logPlantCare = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// PATCH /api/userplants/:id/schedule
+// @desc    Update care schedule for a user plant
+// @access  Private
+exports.updateUserPlantSchedule = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { wateringFrequencyDays, fertilizingFrequencyDays, repotIntervalMonths, rotateIntervalDays, isCustom } = req.body;
+
+    const doc = await UserPlant.findOne({ _id: id, user: req.user._id });
+    if (!doc) return res.status(404).json({ message: 'UserPlant not found' });
+
+    doc.careSchedule = {
+      ...doc.careSchedule?.toObject?.() ?? doc.careSchedule ?? {},
+      ...(wateringFrequencyDays != null ? { wateringFrequencyDays } : {}),
+      ...(fertilizingFrequencyDays != null ? { fertilizingFrequencyDays } : {}),
+      ...(repotIntervalMonths != null ? { repotIntervalMonths } : {}),
+      ...(rotateIntervalDays != null ? { rotateIntervalDays } : {}),
+      ...(isCustom != null ? { isCustom } : { isCustom: true }),
+    };
+
+    const now = new Date();
+    const lastWater = doc.lastWatered || now;
+    const lastFert  = doc.lastFertilized || now;
+    const lastRepot = doc.lastRepotted || now;
+    const lastRot   = doc.lastRotated || now;
+
+    const cs = doc.careSchedule || {};
+    doc.nextWateringDue    = new Date(lastWater.getTime() + (cs.wateringFrequencyDays ?? 7) * 86400000);
+    doc.nextFertilizingDue = new Date(lastFert.getTime()  + (cs.fertilizingFrequencyDays ?? 30) * 86400000);
+    const repotNext = new Date(lastRepot);
+    repotNext.setMonth(repotNext.getMonth() + (cs.repotIntervalMonths ?? 18));
+    doc.nextRepotDue = repotNext;
+    doc.nextRotateDue = new Date(lastRot.getTime() + (cs.rotateIntervalDays ?? 14) * 86400000);
+
+    await doc.save();
+
+    const populated = await UserPlant.findById(doc._id)
+      .populate('plant', 'name slug images primaryImage soil tier light');
+
+    return res.json(populated);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 // @route   POST /api/userplants/:id/upload
 // @desc    Upload plant image

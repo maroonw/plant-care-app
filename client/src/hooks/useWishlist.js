@@ -4,13 +4,12 @@ import useAuth from './useAuth';
 
 export default function useWishlist() {
   const { token } = useAuth();
-  const [items, setItems] = useState([]); // array of Plant docs
+  const [items, setItems] = useState([]);
 
   const refresh = useCallback(async () => {
     if (!token) { setItems([]); return; }
     const res = await getWishlist();
-    const data = Array.isArray(res.data) ? res.data : [];
-    setItems(data);
+    setItems(Array.isArray(res.data) ? res.data : []);
   }, [token]);
 
   useEffect(() => {
@@ -30,35 +29,32 @@ export default function useWishlist() {
   const idSet = useMemo(() => new Set(items.map(p => p?._id).filter(Boolean)), [items]);
   const isWishlisted = useCallback((plantId) => idSet.has(plantId), [idSet]);
 
-  // Accept either a plant object or an id
-  const add = useCallback(async (plantOrId) => {
+  const add = useCallback((plantOrId) => {
     if (!token) return { ok: false, reason: 'auth' };
     const plant = typeof plantOrId === 'object' ? plantOrId : null;
     const plantId = plant ? plant._id : plantOrId;
 
-    // optimistic add immediately
-    if (plant && !idSet.has(plantId)) setItems(prev => [{ ...plant }, ...prev]);
-    else if (!plant && !idSet.has(plantId)) setItems(prev => [{ _id: plantId }, ...prev]);
-    // fire-and-forget; reconcile when response arrives
+    // optimistic insert
+    if (!idSet.has(plantId)) {
+      setItems(prev => [{ ...(plant || { _id: plantId }) }, ...prev]);
+    }
+
     addToWishlist(plantId)
       .then(res => Array.isArray(res.data) && setItems(res.data))
-      .catch(() => {
-        // rollback only if we added optimistically and server failed
-        setItems(prev => prev.filter(p => p._id !== plantId));
-      });
+      .catch(() => setItems(prev => prev.filter(p => p._id !== plantId)));
+
     return { ok: true };
   }, [token, idSet]);
 
-  const remove = useCallback(async (plantId) => {
+  const remove = useCallback((plantId) => {
     if (!token) return { ok: false, reason: 'auth' };
-    // optimistic remove immediately
+    // optimistic remove
     setItems(prev => prev.filter(p => p._id !== plantId));
-    // fire-and-forget; reconcile when response arrives
     removeFromWishlist(plantId)
       .then(res => Array.isArray(res.data) && setItems(res.data))
-        .catch(() => refresh());
+      .catch(() => refresh());
     return { ok: true };
-  }, [token, items, refresh]);
+  }, [token, refresh]);
 
-  return { items, isWishlisted, add, remove, tokenPresent: !!token, refresh, count: items.length };
+  return { items, isWishlisted, add, remove, count: items.length, refresh, tokenPresent: !!token };
 }

@@ -26,8 +26,21 @@ const plantSchema = new mongoose.Schema({
   slug: { type: String, index: true, unique: true }, // NEW
   scientificName: String,
   tier: { type: String, enum: ['easy', 'standard', 'hard'], required: true },
-  wateringFrequencyDays: Number,
-  fertilizingFrequencyDays: Number,
+  careSchedule: {
+    wateringFrequencyDays: { type: Number, default: 7 },      // recommendation
+    fertilizingFrequencyDays: { type: Number, default: 30 },  // recommendation
+    repotIntervalMonths: { type: Number, default: 18 },       // recommendation
+    rotateIntervalDays: { type: Number, default: 14 },        // recommendation
+    isCustom: { type: Boolean, default: false },               // true if user overrides
+  },
+  lastWatered: Date,
+  nextWateringDue: Date,
+  lastFertilized: Date,
+  nextFertilizingDue: Date,
+  lastRepotted: Date,
+  nextRepotDue: Date,
+  lastRotated: Date,
+  nextRotateDue: Date,
   light: { type: String, enum: ['low', 'medium', 'bright', 'direct'] },
   soil: { type: String,
     enum: [

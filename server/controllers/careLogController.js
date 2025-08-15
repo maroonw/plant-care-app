@@ -21,32 +21,34 @@ exports.getCareLogForUserPlant = async (req, res) => {
 // @access  Private
 exports.createCareLog = async (req, res) => {
   try {
-    const { userPlantId, type, date, note } = req.body; // type: 'water' | 'fertilize'
-    if (!userPlantId || !type) {
-      return res.status(400).json({ message: 'userPlantId and type are required' });
-    }
+    const { userPlantId, type, date, note } = req.body; // 'water' | 'fertilize' | 'repot' | 'rotate'
+    if (!userPlantId || !type) return res.status(400).json({ message: 'userPlantId and type are required' });
 
     const userPlant = await UserPlant.findOne({ _id: userPlantId, user: req.user._id });
     if (!userPlant) return res.status(404).json({ message: 'UserPlant not found' });
 
     const when = date ? new Date(date) : new Date();
+    const cs = userPlant.careSchedule || {};
 
-    // pull frequencies (fallback to defaults)
-    const waterDays =
-      userPlant.careSchedule?.wateringFrequencyDays ??
-      userPlant.wateringFrequencyDays ?? // if you have top-level copies
-      7;
-    const fertDays =
-      userPlant.careSchedule?.fertilizingFrequencyDays ??
-      userPlant.fertilizingFrequencyDays ?? // if you have top-level copies
-      30;
+    const waterDays = cs.wateringFrequencyDays ?? userPlant.wateringFrequencyDays ?? 7;
+    const fertDays  = cs.fertilizingFrequencyDays ?? userPlant.fertilizingFrequencyDays ?? 30;
+    const repotM    = cs.repotIntervalMonths ?? 18;
+    const rotateD   = cs.rotateIntervalDays ?? 14;
 
     if (type === 'water') {
       userPlant.lastWatered = when;
-      userPlant.nextWateringDue = new Date(when.getTime() + waterDays * 24 * 60 * 60 * 1000);
+      userPlant.nextWateringDue = new Date(when.getTime() + waterDays * 86400000);
     } else if (type === 'fertilize') {
       userPlant.lastFertilized = when;
-      userPlant.nextFertilizingDue = new Date(when.getTime() + fertDays * 24 * 60 * 60 * 1000);
+      userPlant.nextFertilizingDue = new Date(when.getTime() + fertDays * 86400000);
+    } else if (type === 'repot') {
+      userPlant.lastRepotted = when;
+      const next = new Date(when);
+      next.setMonth(next.getMonth() + repotM);
+      userPlant.nextRepotDue = next;
+    } else if (type === 'rotate') {
+      userPlant.lastRotated = when;
+      userPlant.nextRotateDue = new Date(when.getTime() + rotateD * 86400000);
     } else {
       return res.status(400).json({ message: 'Invalid care type' });
     }
@@ -61,7 +63,6 @@ exports.createCareLog = async (req, res) => {
       timestamp: when,
     });
 
-    // return populated doc so client can update UI instantly
     const populated = await UserPlant.findById(userPlant._id)
       .populate('plant', 'name slug images primaryImage soil tier light');
 

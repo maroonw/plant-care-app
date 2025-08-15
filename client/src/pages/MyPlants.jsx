@@ -3,6 +3,8 @@ import { toast } from 'react-hot-toast';
 import useMyPlants from '../hooks/useMyPlants';
 import EditMyPlantModal from '../components/EditMyPlantModal';
 import { logCare, getCareLogs } from '../api';
+import EditCareScheduleModal from '../components/EditCareScheduleModal';
+import { updateMyPlantSchedule } from '../api';
 
 function parseDate(d) {
   if (!d) return null;
@@ -22,15 +24,19 @@ function fmtDays(n) {
   return `in ${n} days`;
 }
 function chipColor(type) {
-  return type === 'water'
-    ? 'bg-blue-50 text-blue-700 border-blue-200'
-    : 'bg-amber-50 text-amber-700 border-amber-200';
+  if (type === 'water') return 'bg-blue-50 text-blue-700 border-blue-200';
+  if (type === 'fertilize') return 'bg-amber-50 text-amber-700 border-amber-200';
+  if (type === 'repot') return 'bg-purple-50 text-purple-700 border-purple-200';
+  return 'bg-teal-50 text-teal-700 border-teal-200'; // rotate
 }
+
+
 
 // Build upcoming task objects from a UserPlant
 // You can extend this with { type: 'repot', next: up.nextRepotDue } later.
 function nextTasks(up) {
   const tasks = [];
+  
   // WATER
   const nextWater = up.nextWateringDue || up.careSchedule?.nextWateringDue;
   if (nextWater) {
@@ -40,6 +46,16 @@ function nextTasks(up) {
   const nextFert = up.nextFertilizingDue || up.careSchedule?.nextFertilizingDue;
   if (nextFert) {
     tasks.push({ type: 'fertilize', next: parseDate(nextFert), days: daysUntil(nextFert) });
+  }
+  // REPOT
+  const nextRepot = up.nextRepotDue;
+  if (nextRepot) {
+    tasks.push({ type: 'repot', next: parseDate(nextRepot), days: daysUntil(nextRepot) });
+  }
+  // ROTATE
+  const nextRotate = up.nextRotateDue || up.careSchedule?.nextRotateDue;
+  if (nextRotate) {
+    tasks.push({ type: 'rotate', next: parseDate(nextRotate), days: daysUntil(nextRotate) });
   }
   // Sort tasks by earliest date first
   tasks.sort((a, b) => {
@@ -52,6 +68,8 @@ function nextTasks(up) {
 }
 
 export default function MyPlants() {
+  const [editingSchedule, setEditingSchedule] = useState(null);
+  
   const {
     items, update, remove,
     uploadImages, setPrimaryImage, deleteImage,
@@ -82,11 +100,13 @@ export default function MyPlants() {
   // Filter by task type and due window
   const filtered = useMemo(() => {
     const windowDays = Number(dueDays) || 7;
-    return decorated.filter(({ any, water, fert }) => {
+    return decorated.filter(({ any, water, fert, tasks }) => {
       // choose reference task based on taskFilter
-      const ref =
-        taskFilter === 'water' ? water :
-        taskFilter === 'fertilize' ? fert : any;
+      let ref = any;
+      if (taskFilter === 'water') ref = water;
+      else if (taskFilter === 'fertilize') ref = fert;
+      else if (taskFilter === 'repot') ref = tasks.find(t => t.type === 'repot') || null;
+      else if (taskFilter === 'rotate') ref = tasks.find(t => t.type === 'rotate') || null;
 
       if (!ref) return false; // if no matching task, hide when filtering by type
 
@@ -114,6 +134,22 @@ export default function MyPlants() {
         arr.sort((a, b) => {
           const ad = a.fert?.days ?? Infinity;
           const bd = b.fert?.days ?? Infinity;
+          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
+          return ad - bd;
+        });
+        break;
+      case 'next-repot':
+        arr.sort((a, b) => {
+          const ad = (a.tasks.find(t => t.type === 'repot')?.days) ?? Infinity;
+          const bd = (b.tasks.find(t => t.type === 'repot')?.days) ?? Infinity;
+          if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
+          return ad - bd;
+        });
+        break;
+      case 'next-rotate':
+        arr.sort((a, b) => {
+          const ad = (a.tasks.find(t => t.type === 'rotate')?.days) ?? Infinity;
+          const bd = (b.tasks.find(t => t.type === 'rotate')?.days) ?? Infinity;
           if (ad === bd) return (a.up.plant?.name || '').localeCompare(b.up.plant?.name || '');
           return ad - bd;
         });
@@ -160,6 +196,8 @@ export default function MyPlants() {
               <option value="all">All</option>
               <option value="water">Water</option>
               <option value="fertilize">Fertilize</option>
+              <option value="repot">Repot</option>
+              <option value="rotate">Rotate</option>
             </select>
           </label>
 
@@ -173,6 +211,8 @@ export default function MyPlants() {
               <option value="next">Next due (any)</option>
               <option value="next-water">Next water</option>
               <option value="next-fertilize">Next fertilize</option>
+              <option value="next-repot">Next repot</option>
+              <option value="next-rotate">Next rotate</option>
               <option value="name">Name</option>
             </select>
           </label>
@@ -237,7 +277,10 @@ export default function MyPlants() {
                           className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${chipColor(t.type)}`}
                           title={t.next ? t.next.toLocaleString() : 'No date'}
                         >
-                          {t.type === 'water' ? '💧 Water' : '🌿 Fertilize'} {fmtDays(t.days)}
+                          {t.type === 'water' ? '💧 Water'
+                          : t.type === 'fertilize' ? '🌿 Fertilize'
+                          : t.type === 'repot' ? '🪴 Repot'
+                          : '🔄 Rotate'} {fmtDays(t.days)}
                         </span>
                       )) : (
                         <span className="inline-block rounded-full bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 text-xs">
@@ -288,6 +331,43 @@ export default function MyPlants() {
                         }}
                       >
                         Log Fertilized 🌿
+                      </button>
+
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={async () => {
+                          try {
+                            const res = await logCare({ userPlantId: up._id, type: 'repot', date: new Date().toISOString() });
+                            if (res?.data?.userPlant) applyServerUserPlant(res.data.userPlant);
+                            toast.success('Logged repotting');
+                          } catch {
+                            toast.error('Could not log repotting');
+                          }
+                        }}
+                      >
+                        Log Repotted 🪴
+                      </button>
+
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={async () => {
+                          try {
+                            const res = await logCare({ userPlantId: up._id, type: 'rotate', date: new Date().toISOString() });
+                            if (res?.data?.userPlant) applyServerUserPlant(res.data.userPlant);
+                            toast.success('Logged rotation');
+                          } catch {
+                            toast.error('Could not log rotation');
+                          }
+                        }}
+                      >
+                        Log Rotated 🔄
+                      </button>
+
+                      <button
+                        className="px-3 py-1 text-sm rounded border hover:bg-gray-50"
+                        onClick={() => setEditingSchedule(up)}
+                      >
+                        Edit Schedule ⚙️
                       </button>
 
                       <button
@@ -418,6 +498,24 @@ export default function MyPlants() {
           }}
         />
       )}
+
+      {editingSchedule && (
+        <EditCareScheduleModal
+          userPlant={editingSchedule}
+          onClose={() => setEditingSchedule(null)}
+          onSave={async (schedulePatch) => {
+            try {
+              const res = await updateMyPlantSchedule(editingSchedule._id, schedulePatch);
+              if (res?.data?._id) applyServerUserPlant(res.data);
+              toast.success('Schedule saved');
+              setEditingSchedule(null);
+            } catch {
+              toast.error('Could not save schedule');
+            }
+          }}
+        />
+      )}
+
     </section>
   );
 }

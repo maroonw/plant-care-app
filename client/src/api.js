@@ -47,3 +47,7 @@ export const getRecentCare = (userPlantId) =>
 // Care logs (history)
 export const getCareLogs = (userPlantId) => 
   api.get(`/carelog/${userPlantId}`);
+
+// Update User Plant Schedule
+export const updateMyPlantSchedule = (id, data) => 
+  api.patch(`/userplants/${id}/schedule`, data);

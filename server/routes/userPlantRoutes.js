@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
+const updateUserPlantSchedule = require('../controllers/userPlantController').updateUserPlantSchedule;
 
 const { storage } = require('../utils/cloudinary');
 const upload = multer({ storage });
@@ -41,5 +42,8 @@ router.delete('/:plantId/images/:imageId', protect, deleteUserPlantImage);
 
 // Set primary image
 router.patch('/:plantId/images/:imageId/set-primary', protect, setPrimaryUserPlantImage);
+
+// UPDATE plant schedule (e.g., watering frequency)
+router.patch('/:id/schedule', protect, updateUserPlantSchedule);
 
 module.exports = router;

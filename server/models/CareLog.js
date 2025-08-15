@@ -5,7 +5,7 @@ const careLogSchema = new mongoose.Schema({
   userPlant: { type: mongoose.Schema.Types.ObjectId, ref: 'UserPlant', required: true },
   type: {
     type: String,
-    enum: ['water', 'fertilize'],
+    enum: ['water', 'fertilize', 'repot', 'rotate'],
     required: true
   },
   note: { type: String },
