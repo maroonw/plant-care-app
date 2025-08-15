@@ -5,6 +5,9 @@ import api from '../api';
 import useAuth from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import useWishlist from '../hooks/useWishlist';
+import AddToMyPlantsModal from '../components/AddToMyPlantsModal';
+import useMyPlants from '../hooks/useMyPlants';
+
 
 const PlantDetail = () => {
   const { id } = useParams();
@@ -13,6 +16,10 @@ const PlantDetail = () => {
 
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const { isInMyPlants } = useMyPlants();
+  const owned = plant?._id ? isInMyPlants(plant._id) : false;
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Add-to-my-plants
   const [adding, setAdding] = useState(false);
@@ -80,24 +87,6 @@ const onToggleWish = async () => {
       loadRelated();
     }, [plant?.slug]);
 
-    
-  const handleAdd = async () => {
-    if (!isAuthed) {
-      navigate('/login');
-      return;
-    }
-    try {
-      setAdding(true);
-      await api.post('/userplants', { plantId: plant._id });
-      toast.success('Plant added to your collection!');
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || 'Could not add plant.');
-    } finally {
-      setAdding(false);
-    }
-  };
-
   const submitCommunity = async (e) => {
     e.preventDefault();
     if (!isAuthed) return toast.error('Please log in to submit a photo.');
@@ -136,12 +125,23 @@ const onToggleWish = async () => {
         {wished ? '♥ In wishlist' : '♡ Add to wishlist'}
       </button>
 
+      <button
+        onClick={() => setShowAddModal(true)}
+        className={`ml-3 px-3 py-1 text-sm rounded border ${owned ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        {owned ? '✓ In My Plants' : '🌱 Add to My Plants'}
+      </button>
+
       {plant.primaryImage?.url && (
         <img
           src={plant.primaryImage.url}
           alt={plant.name}
           className="w-full h-auto mb-6 rounded-lg shadow-md"
         />
+      )}
+
+      {showAddModal && plant && (
+        <AddToMyPlantsModal plant={plant} onClose={() => setShowAddModal(false)} />
       )}
 
       <p className="text-lg text-gray-700 mb-4 italic">{plant.scientificName}</p>
@@ -154,14 +154,6 @@ const onToggleWish = async () => {
         <li><strong>Pet Friendly:</strong> {plant.petFriendly ? 'Yes' : 'No'}</li>
       </ul>
 
-      {/* Add to My Plants */}
-      <button
-        onClick={handleAdd}
-        disabled={adding}
-        className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition"
-      >
-        {adding ? 'Adding...' : 'Add to My Plants'}
-      </button>
 
       {/* Community upload (only visible if logged in) */}
       {isAuthed && (

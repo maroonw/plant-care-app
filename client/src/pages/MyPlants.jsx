@@ -3,6 +3,7 @@ import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
+import useMyPlants from '../hooks/useMyPlants';
 
 function fmt(dateStr) {
   if (!dateStr) return '—';
