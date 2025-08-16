@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useWishlist from '../hooks/useWishlist';
 import useMyPlants from '../hooks/useMyPlants';
+import NotificationsBell from './NotificationBell';
 
 const Header = () => {
   const { isAuthed, user, logout } = useAuth();
@@ -42,6 +43,8 @@ const Header = () => {
               </Link>
             </>
           )}
+
+          <NotificationsBell />
 
           {user?.role === 'admin' && (
             <Link to="/admin" className="hover:text-green-600 transition">Admin</Link>

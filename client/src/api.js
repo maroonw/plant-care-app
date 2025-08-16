@@ -51,3 +51,6 @@ export const getCareLogs = (userPlantId) =>
 // Update User Plant Schedule
 export const updateMyPlantSchedule = (id, data) => 
   api.patch(`/userplants/${id}/schedule`, data);
+
+// Notifications, dropdown bell
+export const getNotifications = () => api.get('/notifications');
